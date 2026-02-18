@@ -142,9 +142,9 @@
         
         <div class="controls" id="controls">
             <div class="time-selector">
-                <button class="time-btn" onclick="setTimePeriod('2025')">2025</button>
-                <button class="time-btn" onclick="setTimePeriod('2026')">2026</button>
-                <button class="time-btn active" onclick="setTimePeriod('all')">All Time</button>
+                <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
+                <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
+                <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
             </div>
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">📊 Export as PNG</button>
@@ -187,7 +187,7 @@
             </div>
         </div>
 
-        <p class="legend-note">Purple line = Total OoS | Stacked areas show composition (New + Review)</p>
+        <p class="legend-note" id="legendNote">Stacked bars show annual New + Review composition</p>
     </div>
 
     <script>
@@ -204,116 +204,154 @@
         const data2026Review = [106, null, null, null, null, null, null, null, null, null, null, null];
         const data2026Total = [166, null, null, null, null, null, null, null, null, null, null, null];
 
+        // Annual totals for "All Time" stacked bar chart
+        const annualMT = {
+            labels:  ['2025', '2026'],
+            new:     [358,    60],
+            review:  [655,    106],
+            total:   [1013,   166],
+            subtext: ['Full year', 'January YTD']
+        };
+
         let chart;
         let currentPeriod = 'all';
 
         function createChart(period) {
             const ctx = document.getElementById('oosChart').getContext('2d');
-            
-            // Destroy existing chart if it exists
-            if (chart) {
-                chart.destroy();
+            if (chart) chart.destroy();
+
+            const legendNote = document.getElementById('legendNote');
+
+            // ── ALL TIME: stacked bar chart, x-axis = years ──────────────────
+            if (period === 'all') {
+                legendNote.textContent = 'Stacked bars show annual New + Review composition';
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: annualMT.labels,
+                        datasets: [
+                            {
+                                label: 'Review',
+                                data: annualMT.review,
+                                backgroundColor: 'rgba(230, 126, 115, 0.75)',
+                                borderColor: '#E67E73',
+                                borderWidth: 1.5
+                            },
+                            {
+                                label: 'New',
+                                data: annualMT.new,
+                                backgroundColor: 'rgba(74, 155, 199, 0.75)',
+                                borderColor: '#4A9BC7',
+                                borderWidth: 1.5
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { font: { size: 13 }, padding: 15, usePointStyle: true }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                padding: 12,
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    },
+                                    afterBody: function(items) {
+                                        const idx = items[0].dataIndex;
+                                        return ['Total: ' + annualMT.total[idx].toLocaleString() + ' OoS (' + annualMT.subtext[idx] + ')'];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: { display: true, text: 'Year', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 13 } },
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
+                                ticks: {
+                                    font: { size: 12 },
+                                    callback: function(value) { return value.toLocaleString(); }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            }
+                        }
+                    }
+                });
+                return;
             }
 
-            let datasets = [];
-            
-            if (period === '2025' || period === 'all') {
-                // Manually calculate stacked values for 2025 New (Review + New)
-                const data2025NewStacked = data2025New.map((val, i) => val + data2025Review[i]);
-                
-                datasets.push(
-                    // 2025 Review (bottom layer - fill from zero)
-                    {
-                        label: '2025 Review',
-                        data: data2025Review,
-                        borderColor: '#E67E73',
-                        backgroundColor: 'rgba(230, 126, 115, 0.5)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: 'origin',
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    },
-                    // 2025 New (stacked on top - fill from Review line)
-                    {
-                        label: '2025 New',
-                        data: data2025NewStacked,
-                        borderColor: '#4A9BC7',
-                        backgroundColor: 'rgba(74, 155, 199, 0.5)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: '-1', // Fill to previous dataset (Review)
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    },
-                    // 2025 Total (line overlay)
-                    {
-                        label: '2025 Total',
-                        data: data2025Total,
-                        borderColor: '#9B6B9E',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2.5,
-                        tension: 0.4,
-                        fill: false,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        borderDash: [5, 5]
-                    }
-                );
+            // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
+            legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
+
+            let newData, reviewData, totalData;
+            if (period === '2025') {
+                newData = data2025New; reviewData = data2025Review; totalData = data2025Total;
+            } else {
+                newData = data2026New; reviewData = data2026Review; totalData = data2026Total;
             }
-            
-            if (period === '2026' || period === 'all') {
-                // Manually calculate stacked values for 2026 New (Review + New)
-                const data2026NewStacked = data2026New.map((val, i) => 
-                    val !== null && data2026Review[i] !== null ? val + data2026Review[i] : null
-                );
-                
-                datasets.push(
-                    // 2026 Review (bottom layer - fill from zero)
-                    {
-                        label: '2026 Review',
-                        data: data2026Review,
-                        borderColor: '#E67E73',
-                        backgroundColor: 'rgba(230, 126, 115, 0.7)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: 'origin',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    },
-                    // 2026 New (stacked on top - fill from Review line)
-                    {
-                        label: '2026 New',
-                        data: data2026NewStacked,
-                        borderColor: '#4A9BC7',
-                        backgroundColor: 'rgba(74, 155, 199, 0.7)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: '-1', // Fill to previous dataset (Review)
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    },
-                    // 2026 Total (line overlay)
-                    {
-                        label: '2026 Total',
-                        data: data2026Total,
-                        borderColor: '#9B6B9E',
-                        backgroundColor: 'transparent',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: false,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        borderDash: [5, 5]
-                    }
-                );
-            }
+
+            const isSparse = period === '2026';
+            const ptRadius  = isSparse ? 5 : 3;
+            const ptHover   = isSparse ? 8 : 6;
+
+            const newStacked = newData.map((val, i) =>
+                val !== null && reviewData[i] !== null ? val + reviewData[i] : null
+            );
 
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
-                    datasets: datasets
+                    datasets: [
+                        {
+                            label: period + ' Review',
+                            data: reviewData,
+                            borderColor: '#E67E73',
+                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: 'origin',
+                            pointRadius: ptRadius,
+                            pointHoverRadius: ptHover
+                        },
+                        {
+                            label: period + ' New',
+                            data: newStacked,
+                            borderColor: '#4A9BC7',
+                            backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: '-1',
+                            pointRadius: ptRadius,
+                            pointHoverRadius: ptHover
+                        },
+                        {
+                            label: period + ' Total',
+                            data: totalData,
+                            borderColor: '#9B6B9E',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            borderDash: [5, 5]
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -322,48 +360,21 @@
                         legend: {
                             display: true,
                             position: 'top',
-                            labels: {
-                                font: {
-                                    size: 13
-                                },
-                                padding: 15,
-                                usePointStyle: true,
-                                filter: function(item, chart) {
-                                    // Hide total lines from legend in 'all' view to reduce clutter
-                                    if (period === 'all' && item.text.includes('Total')) {
-                                        return false;
-                                    }
-                                    return true;
-                                }
-                            }
+                            labels: { font: { size: 13 }, padding: 15, usePointStyle: true }
                         },
                         tooltip: {
                             backgroundColor: 'rgba(0, 0, 0, 0.85)',
                             padding: 12,
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 13
-                            },
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-                                    
-                                    // For "New" datasets, show the actual new value (not stacked value)
                                     if (context.dataset.label.includes('New')) {
-                                        const monthIndex = context.dataIndex;
-                                        let actualNewValue;
-                                        
-                                        if (context.dataset.label.includes('2025')) {
-                                            actualNewValue = data2025New[monthIndex];
-                                        } else if (context.dataset.label.includes('2026')) {
-                                            actualNewValue = data2026New[monthIndex];
-                                        }
-                                        
-                                        return context.dataset.label + ': ' + actualNewValue.toLocaleString() + ' OoS';
+                                        const actualNew = newData[context.dataIndex];
+                                        if (actualNew === null) return null;
+                                        return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
                                     }
-                                    
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
                             }
@@ -372,49 +383,20 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Occasions of Service',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
+                            title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                             ticks: {
-                                font: {
-                                    size: 12
-                                },
-                                callback: function(value) {
-                                    return value.toLocaleString();
-                                }
+                                font: { size: 12 },
+                                callback: function(value) { return value.toLocaleString(); }
                             },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
                         },
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Month',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12
-                                }
-                            },
-                            grid: {
-                                display: false
-                            }
+                            title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } },
+                            ticks: { font: { size: 12 } },
+                            grid: { display: false }
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
+                    interaction: { intersect: false, mode: 'index' }
                 }
             });
         }
@@ -462,16 +444,10 @@
             document.getElementById('reviewRatio').textContent = reviewPercent + '% Review';
         }
 
-        function setTimePeriod(period) {
+        function setTimePeriod(period, event) {
             currentPeriod = period;
-            
-            // Update button states
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
-            // Recreate chart and update summary
             createChart(period);
             updateSummary(period);
         }

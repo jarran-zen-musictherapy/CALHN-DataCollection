@@ -67,8 +67,8 @@
             transition: all 0.2s;
         }
         .export-btn:hover {
-            background: #7d5280;
-            border-color: #7d5280;
+            background: #7a5480;
+            border-color: #7a5480;
         }
         .chart-container {
             position: relative;
@@ -133,18 +133,25 @@
             margin-top: 15px;
             font-style: italic;
         }
+        .estimate-note {
+            text-align: center;
+            font-size: 12px;
+            color: #e67e22;
+            margin-top: 6px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Spiritual Care - Occasions of Service</h1>
-        <p class="subtitle">New vs Review Sessions (estimated 35%/65% split — update with actual data)</p>
+        <p class="subtitle">New vs Review Sessions</p>
 
         <div class="controls" id="controls">
             <div class="time-selector">
-                <button class="time-btn" onclick="setTimePeriod('2025')">2025</button>
-                <button class="time-btn" onclick="setTimePeriod('2026')">2026</button>
-                <button class="time-btn active" onclick="setTimePeriod('all')">All Time</button>
+                <button class="time-btn" onclick="setTimePeriod('2024', event)">2024</button>
+                <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
+                <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
+                <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
             </div>
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">&#128202; Export as PNG</button>
@@ -187,126 +194,179 @@
             </div>
         </div>
 
-        <p class="legend-note">Purple line = Total OoS | Stacked areas show composition (New + Review)</p>
+        <p class="legend-note" id="legendNote">Stacked bars show annual New + Review composition</p>
+        <p class="estimate-note">&#9888; New/Review split is estimated (35%/65%) — update with actual data when available</p>
     </div>
 
     <script>
-        // Data — months
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // 2025 NEW vs REVIEW (estimated 35% New / 65% Review from total OOS data)
-        // Replace with actual data when available
+        // 2024 – provided totals, split 35% New / 65% Review
+        const data2024New    = [179, 246, 177, 179, 230, 207, 287, 282, 253, 254, 259, 265];
+        const data2024Review = [331, 457, 328, 332, 427, 384, 534, 523, 469, 471, 482, 492];
+        const data2024Total  = data2024New.map((v, i) => v + data2024Review[i]);
+
+        // 2025 – provided totals, split 35% New / 65% Review
         const data2025New    = [180, 219, 269, 253, 305, 281, 274, 255, 255, 303, 241, 243];
         const data2025Review = [335, 406, 499, 469, 567, 522, 508, 473, 473, 563, 447, 452];
-        const data2025Total  = data2025New.map((val, i) => val + data2025Review[i]);
+        const data2025Total  = data2025New.map((v, i) => v + data2025Review[i]);
 
-        // 2026 data (Jan only — estimated 35% New / 65% Review from total 667)
-        // Replace with actual data when available
+        // 2026 – January only
         const data2026New    = [233, null, null, null, null, null, null, null, null, null, null, null];
         const data2026Review = [434, null, null, null, null, null, null, null, null, null, null, null];
         const data2026Total  = [667, null, null, null, null, null, null, null, null, null, null, null];
+
+        // Annual totals for "All Time" stacked bar chart
+        const annualSC = {
+            labels:  ['2024',  '2025',  '2026'],
+            new:     [2818,    3078,    233],
+            review:  [5230,    5714,    434],
+            total:   [8048,    8792,    667],
+            subtext: ['Full year', 'Full year', 'January YTD']
+        };
 
         let chart;
         let currentPeriod = 'all';
 
         function createChart(period) {
             const ctx = document.getElementById('oosChart').getContext('2d');
+            if (chart) chart.destroy();
 
-            if (chart) {
-                chart.destroy();
-            }
+            const legendNote = document.getElementById('legendNote');
 
-            let datasets = [];
+            // ── ALL TIME: stacked bar chart, x-axis = years ──────────────────
+            if (period === 'all') {
+                legendNote.textContent = 'Stacked bars show annual New + Review composition';
 
-            if (period === '2025' || period === 'all') {
-                const data2025NewStacked = data2025New.map((val, i) => val + data2025Review[i]);
-
-                datasets.push(
-                    {
-                        label: '2025 Review',
-                        data: data2025Review,
-                        borderColor: '#E67E73',
-                        backgroundColor: 'rgba(230, 126, 115, 0.5)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: 'origin',
-                        pointRadius: 3,
-                        pointHoverRadius: 6
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: annualSC.labels,
+                        datasets: [
+                            {
+                                label: 'Review',
+                                data: annualSC.review,
+                                backgroundColor: 'rgba(230, 126, 115, 0.75)',
+                                borderColor: '#E67E73',
+                                borderWidth: 1.5
+                            },
+                            {
+                                label: 'New',
+                                data: annualSC.new,
+                                backgroundColor: 'rgba(74, 155, 199, 0.75)',
+                                borderColor: '#4A9BC7',
+                                borderWidth: 1.5
+                            }
+                        ]
                     },
-                    {
-                        label: '2025 New',
-                        data: data2025NewStacked,
-                        borderColor: '#4A9BC7',
-                        backgroundColor: 'rgba(74, 155, 199, 0.5)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: '-1',
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    },
-                    {
-                        label: '2025 Total',
-                        data: data2025Total,
-                        borderColor: '#9B6B9E',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2.5,
-                        tension: 0.4,
-                        fill: false,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        borderDash: [5, 5]
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { font: { size: 13 }, padding: 15, usePointStyle: true }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                padding: 12,
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    },
+                                    afterBody: function(items) {
+                                        const idx = items[0].dataIndex;
+                                        return ['Total: ' + annualSC.total[idx].toLocaleString() + ' OoS (' + annualSC.subtext[idx] + ')'];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: { display: true, text: 'Year', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 13 } },
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
+                                ticks: {
+                                    font: { size: 12 },
+                                    callback: function(value) { return value.toLocaleString(); }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            }
+                        }
                     }
-                );
+                });
+                return;
             }
 
-            if (period === '2026' || period === 'all') {
-                const data2026NewStacked = data2026New.map((val, i) =>
-                    val !== null && data2026Review[i] !== null ? val + data2026Review[i] : null
-                );
+            // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
+            legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
 
-                datasets.push(
-                    {
-                        label: '2026 Review',
-                        data: data2026Review,
-                        borderColor: '#E67E73',
-                        backgroundColor: 'rgba(230, 126, 115, 0.7)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: 'origin',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    },
-                    {
-                        label: '2026 New',
-                        data: data2026NewStacked,
-                        borderColor: '#4A9BC7',
-                        backgroundColor: 'rgba(74, 155, 199, 0.7)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: '-1',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    },
-                    {
-                        label: '2026 Total',
-                        data: data2026Total,
-                        borderColor: '#9B6B9E',
-                        backgroundColor: 'transparent',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: false,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        borderDash: [5, 5]
-                    }
-                );
+            let newData, reviewData, totalData;
+            if (period === '2024') {
+                newData = data2024New; reviewData = data2024Review; totalData = data2024Total;
+            } else if (period === '2025') {
+                newData = data2025New; reviewData = data2025Review; totalData = data2025Total;
+            } else {
+                newData = data2026New; reviewData = data2026Review; totalData = data2026Total;
             }
+
+            const isSparse = period === '2026'; // only partial-year data
+            const ptRadius  = isSparse ? 5 : 3;
+            const ptHover   = isSparse ? 8 : 6;
+
+            const newStacked = newData.map((val, i) =>
+                val !== null && reviewData[i] !== null ? val + reviewData[i] : null
+            );
 
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
-                    datasets: datasets
+                    datasets: [
+                        {
+                            label: period + ' Review',
+                            data: reviewData,
+                            borderColor: '#E67E73',
+                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: 'origin',
+                            pointRadius: ptRadius,
+                            pointHoverRadius: ptHover
+                        },
+                        {
+                            label: period + ' New',
+                            data: newStacked,
+                            borderColor: '#4A9BC7',
+                            backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: '-1',
+                            pointRadius: ptRadius,
+                            pointHoverRadius: ptHover
+                        },
+                        {
+                            label: period + ' Total',
+                            data: totalData,
+                            borderColor: '#9B6B9E',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            borderDash: [5, 5]
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -315,17 +375,7 @@
                         legend: {
                             display: true,
                             position: 'top',
-                            labels: {
-                                font: { size: 13 },
-                                padding: 15,
-                                usePointStyle: true,
-                                filter: function(item) {
-                                    if (period === 'all' && item.text.includes('Total')) {
-                                        return false;
-                                    }
-                                    return true;
-                                }
-                            }
+                            labels: { font: { size: 13 }, padding: 15, usePointStyle: true }
                         },
                         tooltip: {
                             backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -335,18 +385,11 @@
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-
                                     if (context.dataset.label.includes('New')) {
-                                        const monthIndex = context.dataIndex;
-                                        let actualNewValue;
-                                        if (context.dataset.label.includes('2025')) {
-                                            actualNewValue = data2025New[monthIndex];
-                                        } else if (context.dataset.label.includes('2026')) {
-                                            actualNewValue = data2026New[monthIndex];
-                                        }
-                                        return context.dataset.label + ': ' + actualNewValue.toLocaleString() + ' OoS';
+                                        const actualNew = newData[context.dataIndex];
+                                        if (actualNew === null) return null;
+                                        return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
                                     }
-
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
                             }
@@ -355,33 +398,20 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Occasions of Service',
-                                font: { size: 14, weight: 'bold' }
-                            },
+                            title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                             ticks: {
                                 font: { size: 12 },
-                                callback: function(value) {
-                                    return value.toLocaleString();
-                                }
+                                callback: function(value) { return value.toLocaleString(); }
                             },
                             grid: { color: 'rgba(0, 0, 0, 0.05)' }
                         },
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Month',
-                                font: { size: 14, weight: 'bold' }
-                            },
+                            title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } },
                             ticks: { font: { size: 12 } },
                             grid: { display: false }
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
+                    interaction: { intersect: false, mode: 'index' }
                 }
             });
         }
@@ -389,9 +419,15 @@
         function updateSummary(period) {
             let totalNew, totalReview, total, label, subtext;
 
-            if (period === '2025') {
-                totalNew    = data2025New.reduce((sum, val) => sum + val, 0);
-                totalReview = data2025Review.reduce((sum, val) => sum + val, 0);
+            if (period === '2024') {
+                totalNew    = data2024New.reduce((s, v) => s + v, 0);
+                totalReview = data2024Review.reduce((s, v) => s + v, 0);
+                total       = totalNew + totalReview;
+                label       = '2024 Total';
+                subtext     = 'Full year';
+            } else if (period === '2025') {
+                totalNew    = data2025New.reduce((s, v) => s + v, 0);
+                totalReview = data2025Review.reduce((s, v) => s + v, 0);
                 total       = totalNew + totalReview;
                 label       = '2025 Total';
                 subtext     = 'Full year';
@@ -402,55 +438,46 @@
                 label       = '2026 Total';
                 subtext     = 'January only';
             } else { // all
-                const new2025    = data2025New.reduce((sum, val) => sum + val, 0);
-                const review2025 = data2025Review.reduce((sum, val) => sum + val, 0);
-                totalNew    = new2025 + 233;
-                totalReview = review2025 + 434;
+                totalNew    = annualSC.new.reduce((s, v) => s + v, 0);
+                totalReview = annualSC.review.reduce((s, v) => s + v, 0);
                 total       = totalNew + totalReview;
                 label       = 'All Time Total';
-                subtext     = '2025 + 2026 YTD';
+                subtext     = '2024 + 2025 + 2026 YTD';
             }
 
-            const newPercent    = Math.round((totalNew / total) * 100);
-            const reviewPercent = Math.round((totalReview / total) * 100);
+            const newPct    = Math.round((totalNew    / total) * 100);
+            const reviewPct = Math.round((totalReview / total) * 100);
 
             document.getElementById('totalLabel').textContent    = label;
             document.getElementById('totalValue').textContent    = total.toLocaleString();
             document.getElementById('totalSubtext').textContent  = subtext;
 
             document.getElementById('newValue').textContent      = totalNew.toLocaleString();
-            document.getElementById('newSubtext').textContent    = newPercent + '% of total';
+            document.getElementById('newSubtext').textContent    = newPct + '% of total';
 
             document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
-            document.getElementById('reviewSubtext').textContent = reviewPercent + '% of total';
+            document.getElementById('reviewSubtext').textContent = reviewPct + '% of total';
 
-            document.getElementById('newRatio').textContent    = newPercent + '% New';
-            document.getElementById('reviewRatio').textContent = reviewPercent + '% Review';
+            document.getElementById('newRatio').textContent    = newPct + '% New';
+            document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
         }
 
-        function setTimePeriod(period) {
+        function setTimePeriod(period, event) {
             currentPeriod = period;
-
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-
             createChart(period);
             updateSummary(period);
         }
 
-        // Initialise with 'all' view
+        // Initialise with All Time view
         createChart('all');
         updateSummary('all');
 
-        // Export to PNG
         function exportToPNG() {
-            const controls    = document.getElementById('controls');
-            const legendNote  = document.querySelector('.legend-note');
-            controls.style.display = 'none';
-
-            const originalLegendDisplay = legendNote.style.display;
+            const controls   = document.getElementById('controls');
+            const legendNote = document.getElementById('legendNote');
+            controls.style.display   = 'none';
             legendNote.style.display = 'none';
 
             html2canvas(document.querySelector('.container'), {
@@ -458,8 +485,8 @@
                 scale: 2,
                 logging: false
             }).then(canvas => {
-                controls.style.display = 'block';
-                legendNote.style.display = originalLegendDisplay;
+                controls.style.display   = 'block';
+                legendNote.style.display = '';
 
                 canvas.toBlob(function(blob) {
                     const url  = URL.createObjectURL(blob);
@@ -472,8 +499,8 @@
                     URL.revokeObjectURL(url);
                 });
             }).catch(error => {
-                controls.style.display = 'block';
-                legendNote.style.display = originalLegendDisplay;
+                controls.style.display   = 'block';
+                legendNote.style.display = '';
                 console.error('Export failed:', error);
                 alert('Export failed. Please try again.');
             });
