@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALHN Music Therapy - Data Visualizations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #E67E73 0%, #9B6B9E 50%, #4A9BC7 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 40px;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .card-description {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+        .card.music-therapy {
+            border-left: 4px solid #9B6B9E;
+        }
+        .card.spiritual-care {
+            border-left: 4px solid #4A9BC7;
+        }
+        .footer {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(155, 107, 158, 0.15);
+            color: #9B6B9E;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CALHN Music Therapy Service</h1>
+            <p class="subtitle">Data Visualizations & Reporting Dashboard</p>
+        </div>
+
+        <div class="cards">
+            <!-- Music Therapy Interactive -->
+            <a href="music_therapy_interactive_Data.html" class="card music-therapy">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Music Therapy: New vs Review</div>
+                <div class="card-description">
+                    Interactive visualization showing the breakdown of new patient sessions versus review sessions. Includes time period selector (2025/2026/All Time) and PNG export.
+                </div>
+                <span class="badge">Interactive</span>
+            </a>
+
+            <!-- Music Therapy Simple -->
+            <a href="Music_Therapy_oos_graph.html" class="card music-therapy">
+                <div class="card-icon">📈</div>
+                <div class="card-title">Music Therapy: Total OOS</div>
+                <div class="card-description">
+                    Simple trend graph showing total Occasions of Service for Music Therapy across 2024, 2025, and 2026 with monthly breakdown.
+                </div>
+                <span class="badge">Static</span>
+            </a>
+
+            <!-- Spiritual Care -->
+            <a href="Spiritual_Care_oos_graph.html" class="card spiritual-care">
+                <div class="card-icon">🕊️</div>
+                <div class="card-title">Spiritual Care: Total OOS</div>
+                <div class="card-description">
+                    Occasions of Service trend for Spiritual Care Services showing activity levels across hospital sites (RAH, TQEH, Glenside, Repat).
+                </div>
+                <span class="badge">Static</span>
+            </a>
+        </div>
+
+        <div class="footer">
+            CALHN Wellness and Spiritual Care Services | Central Adelaide Local Health Network<br>
+            Last updated: February 2026
+        </div>
+    </div>
+</body>
+</html>
