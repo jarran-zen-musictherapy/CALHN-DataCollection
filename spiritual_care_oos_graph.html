@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spiritual Care - Occasions of Service</title>
+    <title>Spiritual Care - New vs Review Sessions</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,7 +23,52 @@
         h1 {
             color: #2c3e50;
             text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .time-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin-bottom: 30px;
+        }
+        .time-btn {
+            padding: 10px 24px;
+            border: 2px solid #4A9BC7;
+            background: white;
+            color: #4A9BC7;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .time-btn:hover {
+            background: rgba(74, 155, 199, 0.1);
+        }
+        .time-btn.active {
+            background: #4A9BC7;
+            color: white;
+        }
+        .export-btn {
+            padding: 10px 24px;
+            border: 2px solid #9B6B9E;
+            background: #9B6B9E;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .export-btn:hover {
+            background: #7d5280;
+            border-color: #7d5280;
         }
         .chart-container {
             position: relative;
@@ -39,189 +85,399 @@
             background: #f8f9fa;
             padding: 20px;
             border-radius: 6px;
-            border-left: 4px solid #9B6B9E;
+            border-left: 4px solid #4A9BC7;
         }
         .summary-card h3 {
             margin: 0 0 10px 0;
             color: #2c3e50;
-            font-size: 14px;
+            font-size: 12px;
             text-transform: uppercase;
+            font-weight: 600;
         }
         .summary-card .value {
             font-size: 28px;
             font-weight: bold;
-            color: #9B6B9E;
+            color: #4A9BC7;
+        }
+        .summary-card .subtext {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .ratio-display {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .ratio-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .ratio-item.new {
+            background: rgba(74, 155, 199, 0.15);
+            color: #4A9BC7;
+            font-weight: 600;
+        }
+        .ratio-item.review {
+            background: rgba(230, 126, 115, 0.15);
+            color: #E67E73;
+            font-weight: 600;
+        }
+        .legend-note {
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 15px;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Spiritual Care - Occasions of Service</h1>
-        
+        <p class="subtitle">New vs Review Sessions (estimated 35%/65% split — update with actual data)</p>
+
+        <div class="controls" id="controls">
+            <div class="time-selector">
+                <button class="time-btn" onclick="setTimePeriod('2025')">2025</button>
+                <button class="time-btn" onclick="setTimePeriod('2026')">2026</button>
+                <button class="time-btn active" onclick="setTimePeriod('all')">All Time</button>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="export-btn" onclick="exportToPNG()">&#128202; Export as PNG</button>
+            </div>
+        </div>
+
         <div class="chart-container">
             <canvas id="oosChart"></canvas>
         </div>
 
         <div class="summary">
+            <!-- Total -->
             <div class="summary-card">
-                <h3>2024 Total</h3>
-                <div class="value" id="total2024">-</div>
+                <h3 id="totalLabel">Total</h3>
+                <div class="value" id="totalValue">-</div>
+                <div class="subtext" id="totalSubtext">-</div>
             </div>
+
+            <!-- New -->
             <div class="summary-card">
-                <h3>2025 Total</h3>
-                <div class="value" id="total2025">-</div>
+                <h3>New Sessions</h3>
+                <div class="value" id="newValue">-</div>
+                <div class="subtext" id="newSubtext">-</div>
             </div>
+
+            <!-- Review -->
             <div class="summary-card">
-                <h3>2026 YTD</h3>
-                <div class="value" id="total2026">-</div>
+                <h3>Review Sessions</h3>
+                <div class="value" id="reviewValue">-</div>
+                <div class="subtext" id="reviewSubtext">-</div>
             </div>
+
+            <!-- Ratio Display -->
             <div class="summary-card">
-                <h3>Monthly Average (2024)</h3>
-                <div class="value" id="avg2024">-</div>
+                <h3>Session Breakdown</h3>
+                <div class="ratio-display">
+                    <div class="ratio-item new" id="newRatio">-</div>
+                    <div class="ratio-item review" id="reviewRatio">-</div>
+                </div>
             </div>
         </div>
+
+        <p class="legend-note">Purple line = Total OoS | Stacked areas show composition (New + Review)</p>
     </div>
 
     <script>
-        // Data from the image
+        // Data — months
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
-        const data2024 = [510, 703, 505, 511, 657, 591, 821, 805, 722, 725, 741, 757];
-        const data2025 = [515, 625, 768, 722, 872, 803, 782, 728, 728, 866, 688, 695];
-        const data2026 = [667, null, null, null, null, null, null, null, null, null, null, null];
 
-        // Calculate totals
-        const total2024 = data2024.reduce((sum, val) => sum + val, 0);
-        const total2025 = data2025.reduce((sum, val) => sum + val, 0);
-        const total2026 = 667; // Only Jan 2026 data
-        const avg2024 = Math.round(total2024 / 12);
+        // 2025 NEW vs REVIEW (estimated 35% New / 65% Review from total OOS data)
+        // Replace with actual data when available
+        const data2025New    = [180, 219, 269, 253, 305, 281, 274, 255, 255, 303, 241, 243];
+        const data2025Review = [335, 406, 499, 469, 567, 522, 508, 473, 473, 563, 447, 452];
+        const data2025Total  = data2025New.map((val, i) => val + data2025Review[i]);
 
-        // Update summary cards
-        document.getElementById('total2024').textContent = total2024.toLocaleString();
-        document.getElementById('total2025').textContent = total2025.toLocaleString();
-        document.getElementById('total2026').textContent = total2026.toLocaleString();
-        document.getElementById('avg2024').textContent = avg2024.toLocaleString();
+        // 2026 data (Jan only — estimated 35% New / 65% Review from total 667)
+        // Replace with actual data when available
+        const data2026New    = [233, null, null, null, null, null, null, null, null, null, null, null];
+        const data2026Review = [434, null, null, null, null, null, null, null, null, null, null, null];
+        const data2026Total  = [667, null, null, null, null, null, null, null, null, null, null, null];
 
-        // Create the chart
-        const ctx = document.getElementById('oosChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [
-                    {
-                        label: '2024',
-                        data: data2024,
-                        borderColor: '#4A9BC7',
-                        backgroundColor: 'rgba(74, 155, 199, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    },
-                    {
-                        label: '2025',
-                        data: data2025,
-                        borderColor: '#9B6B9E',
-                        backgroundColor: 'rgba(155, 107, 158, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    },
-                    {
-                        label: '2026',
-                        data: data2026,
-                        borderColor: '#E67E73',
-                        backgroundColor: 'rgba(230, 126, 115, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 14
-                            },
-                            padding: 20
-                        }
-                    },
-                    title: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
-                        },
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Occasions of Service',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
-                            },
-                            callback: function(value) {
-                                return value.toLocaleString();
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Month',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                }
+        let chart;
+        let currentPeriod = 'all';
+
+        function createChart(period) {
+            const ctx = document.getElementById('oosChart').getContext('2d');
+
+            if (chart) {
+                chart.destroy();
             }
-        });
+
+            let datasets = [];
+
+            if (period === '2025' || period === 'all') {
+                const data2025NewStacked = data2025New.map((val, i) => val + data2025Review[i]);
+
+                datasets.push(
+                    {
+                        label: '2025 Review',
+                        data: data2025Review,
+                        borderColor: '#E67E73',
+                        backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: 'origin',
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: '2025 New',
+                        data: data2025NewStacked,
+                        borderColor: '#4A9BC7',
+                        backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: '-1',
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: '2025 Total',
+                        data: data2025Total,
+                        borderColor: '#9B6B9E',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        borderDash: [5, 5]
+                    }
+                );
+            }
+
+            if (period === '2026' || period === 'all') {
+                const data2026NewStacked = data2026New.map((val, i) =>
+                    val !== null && data2026Review[i] !== null ? val + data2026Review[i] : null
+                );
+
+                datasets.push(
+                    {
+                        label: '2026 Review',
+                        data: data2026Review,
+                        borderColor: '#E67E73',
+                        backgroundColor: 'rgba(230, 126, 115, 0.7)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: 'origin',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: '2026 New',
+                        data: data2026NewStacked,
+                        borderColor: '#4A9BC7',
+                        backgroundColor: 'rgba(74, 155, 199, 0.7)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: '-1',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: '2026 Total',
+                        data: data2026Total,
+                        borderColor: '#9B6B9E',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        borderDash: [5, 5]
+                    }
+                );
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 13 },
+                                padding: 15,
+                                usePointStyle: true,
+                                filter: function(item) {
+                                    if (period === 'all' && item.text.includes('Total')) {
+                                        return false;
+                                    }
+                                    return true;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                            padding: 12,
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.parsed.y === null) return null;
+
+                                    if (context.dataset.label.includes('New')) {
+                                        const monthIndex = context.dataIndex;
+                                        let actualNewValue;
+                                        if (context.dataset.label.includes('2025')) {
+                                            actualNewValue = data2025New[monthIndex];
+                                        } else if (context.dataset.label.includes('2026')) {
+                                            actualNewValue = data2026New[monthIndex];
+                                        }
+                                        return context.dataset.label + ': ' + actualNewValue.toLocaleString() + ' OoS';
+                                    }
+
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Occasions of Service',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            ticks: {
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            ticks: { font: { size: 12 } },
+                            grid: { display: false }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function updateSummary(period) {
+            let totalNew, totalReview, total, label, subtext;
+
+            if (period === '2025') {
+                totalNew    = data2025New.reduce((sum, val) => sum + val, 0);
+                totalReview = data2025Review.reduce((sum, val) => sum + val, 0);
+                total       = totalNew + totalReview;
+                label       = '2025 Total';
+                subtext     = 'Full year';
+            } else if (period === '2026') {
+                totalNew    = 233;
+                totalReview = 434;
+                total       = 667;
+                label       = '2026 Total';
+                subtext     = 'January only';
+            } else { // all
+                const new2025    = data2025New.reduce((sum, val) => sum + val, 0);
+                const review2025 = data2025Review.reduce((sum, val) => sum + val, 0);
+                totalNew    = new2025 + 233;
+                totalReview = review2025 + 434;
+                total       = totalNew + totalReview;
+                label       = 'All Time Total';
+                subtext     = '2025 + 2026 YTD';
+            }
+
+            const newPercent    = Math.round((totalNew / total) * 100);
+            const reviewPercent = Math.round((totalReview / total) * 100);
+
+            document.getElementById('totalLabel').textContent    = label;
+            document.getElementById('totalValue').textContent    = total.toLocaleString();
+            document.getElementById('totalSubtext').textContent  = subtext;
+
+            document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+            document.getElementById('newSubtext').textContent    = newPercent + '% of total';
+
+            document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+            document.getElementById('reviewSubtext').textContent = reviewPercent + '% of total';
+
+            document.getElementById('newRatio').textContent    = newPercent + '% New';
+            document.getElementById('reviewRatio').textContent = reviewPercent + '% Review';
+        }
+
+        function setTimePeriod(period) {
+            currentPeriod = period;
+
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            createChart(period);
+            updateSummary(period);
+        }
+
+        // Initialise with 'all' view
+        createChart('all');
+        updateSummary('all');
+
+        // Export to PNG
+        function exportToPNG() {
+            const controls    = document.getElementById('controls');
+            const legendNote  = document.querySelector('.legend-note');
+            controls.style.display = 'none';
+
+            const originalLegendDisplay = legendNote.style.display;
+            legendNote.style.display = 'none';
+
+            html2canvas(document.querySelector('.container'), {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false
+            }).then(canvas => {
+                controls.style.display = 'block';
+                legendNote.style.display = originalLegendDisplay;
+
+                canvas.toBlob(function(blob) {
+                    const url  = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
+                    const date = new Date().toISOString().split('T')[0];
+                    link.download = `Spiritual_Care_OOS_${periodLabel}_${date}.png`;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            }).catch(error => {
+                controls.style.display = 'block';
+                legendNote.style.display = originalLegendDisplay;
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
     </script>
 </body>
 </html>
