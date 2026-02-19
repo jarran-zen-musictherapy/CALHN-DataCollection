@@ -306,11 +306,11 @@
                 return;
             }
 
-            // ── 2024: bar chart showing monthly totals only (no New/Review breakdown) ──
+            // ── 2024: line chart showing monthly totals only (no New/Review breakdown) ──
             if (period === '2024') {
                 legendNote.textContent = 'Total OoS per month (New/Review breakdown not available for 2024)';
                 chart = new Chart(ctx, {
-                    type: 'bar',
+                    type: 'line',
                     data: {
                         labels: months,
                         datasets: [{
