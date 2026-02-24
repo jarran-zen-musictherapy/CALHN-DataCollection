@@ -133,6 +133,103 @@
             margin-top: 15px;
             font-style: italic;
         }
+        /* ─── Date Range Modal ─────────────────────────────────── */
+        .filter-btn {
+            padding: 10px 24px;
+            border: 2px solid #9B6B9E;
+            background: white;
+            color: #9B6B9E;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+        .filter-btn:hover { background: rgba(155, 107, 158, 0.1); }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px;
+            width: 100%;
+            max-width: 820px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 { margin: 0; color: #2c3e50; font-size: 18px; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #7f8c8d;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .modal-close:hover { color: #2c3e50; }
+        .modal-range-controls {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .modal-range-controls label { font-size: 13px; font-weight: 600; color: #2c3e50; }
+        .modal-range-controls select {
+            margin-left: 6px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .modal-apply-btn {
+            padding: 7px 20px;
+            border-radius: 6px;
+            border: none;
+            background: #9B6B9E;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .modal-apply-btn:hover { opacity: 0.85; }
+        .modal-error { color: #e74c3c; font-size: 12px; }
+        .modal-chart-container { position: relative; height: 340px; margin-bottom: 12px; }
+        .modal-summary-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -149,6 +246,7 @@
             </div>
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">📊 Export as PNG</button>
+                <button class="filter-btn" onclick="openDateRangeModal()">📅 Date Range</button>
             </div>
         </div>
 
@@ -189,6 +287,49 @@
         </div>
 
         <p class="legend-note" id="legendNote">Stacked bars show annual New + Review composition</p>
+    </div>
+
+    <!-- Date Range Modal -->
+    <div id="dateRangeModal" class="modal-overlay" style="display:none;" onclick="handleModalOverlayClick(event)">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>&#128197; Custom Date Range</h2>
+                <button class="modal-close" onclick="closeDateRangeModal()" title="Close">&#10005;</button>
+            </div>
+            <div class="modal-range-controls">
+                <label>From:
+                    <select id="modalStartMonth">
+                        <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+                        <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
+                        <option value="6">Jul</option><option value="7" selected>Aug</option><option value="8">Sep</option>
+                        <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+                    </select>
+                    <select id="modalStartYear">
+                        <option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option>
+                    </select>
+                </label>
+                <label>To:
+                    <select id="modalEndMonth">
+                        <option value="0" selected>Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+                        <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
+                        <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
+                        <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+                    </select>
+                    <select id="modalEndYear">
+                        <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+                    </select>
+                </label>
+                <button class="modal-apply-btn" onclick="updateModalChart()">Apply</button>
+                <span class="modal-error" id="modalError"></span>
+            </div>
+            <div class="modal-chart-container">
+                <canvas id="modalChart"></canvas>
+            </div>
+            <p class="modal-summary-text" id="modalSummaryText"></p>
+            <div class="modal-footer">
+                <button class="export-btn" onclick="exportModalChart()">&#128202; Export as PNG</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -534,6 +675,165 @@
             event.target.classList.add('active');
             createChart(period);
             updateSummary(period);
+        }
+
+        // ─── Date Range Modal ────────────────────────────────────────────────
+        // Unified data lookup: years where new/review split is unavailable use null
+        const allData = {
+            2024: { new: null,         review: null,          total: data2024Total },
+            2025: { new: data2025New,  review: data2025Review, total: data2025Total },
+            2026: { new: data2026New,  review: data2026Review, total: data2026Total }
+        };
+
+        let modalChartInstance = null;
+
+        function openDateRangeModal() {
+            document.getElementById('dateRangeModal').style.display = 'flex';
+            document.getElementById('modalError').textContent = '';
+            updateModalChart();
+        }
+
+        function closeDateRangeModal() {
+            document.getElementById('dateRangeModal').style.display = 'none';
+            if (modalChartInstance) { modalChartInstance.destroy(); modalChartInstance = null; }
+        }
+
+        function handleModalOverlayClick(event) {
+            if (event.target === document.getElementById('dateRangeModal')) closeDateRangeModal();
+        }
+
+        function getDataForRange(startYear, startMonth, endYear, endMonth) {
+            const labels = [], newVals = [], reviewVals = [], totalVals = [];
+            let y = startYear, m = startMonth;
+            while (y < endYear || (y === endYear && m <= endMonth)) {
+                labels.push(months[m] + ' ' + y);
+                const yd = allData[y] || {};
+                const nv = (yd.new  && yd.new[m]    != null) ? yd.new[m]    : null;
+                const rv = (yd.review && yd.review[m] != null) ? yd.review[m] : null;
+                const tv = (yd.total && yd.total[m]  != null) ? yd.total[m]  : null;
+                newVals.push(nv);
+                reviewVals.push(rv);
+                totalVals.push(tv !== null ? tv : (nv !== null && rv !== null ? nv + rv : null));
+                m++; if (m > 11) { m = 0; y++; }
+            }
+            return { labels, newVals, reviewVals, totalVals };
+        }
+
+        function updateModalChart() {
+            const startMonth = parseInt(document.getElementById('modalStartMonth').value);
+            const startYear  = parseInt(document.getElementById('modalStartYear').value);
+            const endMonth   = parseInt(document.getElementById('modalEndMonth').value);
+            const endYear    = parseInt(document.getElementById('modalEndYear').value);
+            const errEl      = document.getElementById('modalError');
+
+            if (startYear > endYear || (startYear === endYear && startMonth > endMonth)) {
+                errEl.textContent = 'Start date must be before end date.';
+                return;
+            }
+            errEl.textContent = '';
+
+            const { labels, newVals, reviewVals, totalVals } = getDataForRange(startYear, startMonth, endYear, endMonth);
+            const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
+            const newStacked   = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
+
+            const ctx = document.getElementById('modalChart').getContext('2d');
+            if (modalChartInstance) modalChartInstance.destroy();
+
+            const datasets = [];
+            if (hasBreakdown) {
+                datasets.push({
+                    label: 'Review', data: reviewVals,
+                    borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                    borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 3, pointHoverRadius: 6
+                });
+                datasets.push({
+                    label: 'New', data: newStacked,
+                    borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                    borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 3, pointHoverRadius: 6
+                });
+            }
+            datasets.push({
+                label: 'Total OoS', data: totalVals,
+                borderColor: '#9B6B9E', backgroundColor: 'transparent',
+                borderWidth: 2.5, tension: 0.4, fill: false,
+                pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5,
+                borderDash: hasBreakdown ? [5, 5] : []
+            });
+
+            modalChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { font: { size: 12 }, padding: 12, usePointStyle: true } },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.85)', padding: 10,
+                            titleFont: { size: 13 }, bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.parsed.y === null) return null;
+                                    if (context.dataset.label === 'New') {
+                                        const actualNew = newVals[context.dataIndex];
+                                        return actualNew !== null ? 'New: ' + actualNew.toLocaleString() + ' OoS' : null;
+                                    }
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Occasions of Service', font: { size: 13, weight: 'bold' } },
+                            ticks: { font: { size: 11 }, callback: v => v.toLocaleString() },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Month', font: { size: 13, weight: 'bold' } },
+                            ticks: { font: { size: 11 }, maxRotation: 45 },
+                            grid: { display: false }
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+
+            const validTotals  = totalVals.filter(v => v !== null);
+            const rangeTotal   = validTotals.reduce((s, v) => s + v, 0);
+            const startLabel   = months[startMonth] + ' ' + startYear;
+            const endLabel     = months[endMonth]   + ' ' + endYear;
+            const monthCount   = validTotals.length;
+            document.getElementById('modalSummaryText').textContent =
+                startLabel + ' \u2013 ' + endLabel + ' \u00b7 ' +
+                monthCount + ' month' + (monthCount !== 1 ? 's' : '') + ' \u00b7 ' +
+                'Total: ' + rangeTotal.toLocaleString() + ' OoS' +
+                (hasBreakdown ? '' : ' (New/Review breakdown not available for all months)');
+        }
+
+        function exportModalChart() {
+            const footer = document.querySelector('.modal-footer');
+            footer.style.display = 'none';
+            html2canvas(document.querySelector('.modal-box'), {
+                backgroundColor: '#ffffff', scale: 2, logging: false
+            }).then(canvas => {
+                footer.style.display = 'flex';
+                canvas.toBlob(function(blob) {
+                    const url  = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const sm   = parseInt(document.getElementById('modalStartMonth').value);
+                    const sy   = document.getElementById('modalStartYear').value;
+                    const em   = parseInt(document.getElementById('modalEndMonth').value);
+                    const ey   = document.getElementById('modalEndYear').value;
+                    const date = new Date().toISOString().split('T')[0];
+                    link.download = 'Music_Therapy_OOS_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.png';
+                    link.href = url; link.click(); URL.revokeObjectURL(url);
+                });
+            }).catch(error => {
+                footer.style.display = 'flex';
+                console.error('Modal export failed:', error);
+                alert('Export failed. Please try again.');
+            });
         }
 
         // Initialize with 'all' view
