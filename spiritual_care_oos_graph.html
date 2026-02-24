@@ -303,6 +303,7 @@
                 <h2>&#128197; Custom Date Range</h2>
                 <button class="modal-close" onclick="closeDateRangeModal()" title="Close">&#10005;</button>
             </div>
+            <div id="modalExportHeader" style="display: none;"><h2 id="modalExportTitle"></h2><p id="modalExportDateRange"></p></div>
             <div class="modal-range-controls">
                 <label>From:
                     <select id="modalStartMonth">
@@ -331,6 +332,23 @@
             </div>
             <div class="modal-chart-container">
                 <canvas id="modalChart"></canvas>
+            </div>
+            <div class="modal-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <div class="summary-card" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #9B6B9E;">
+                    <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 11px; text-transform: uppercase; font-weight: 600;">Total</h3>
+                    <div class="value" style="font-size: 20px; font-weight: bold; color: #9B6B9E;" id="modalTotalValue">-</div>
+                    <div class="subtext" style="font-size: 10px; color: #7f8c8d; margin-top: 2px;" id="modalTotalSubtext">-</div>
+                </div>
+                <div class="summary-card" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #4A9BC7;">
+                    <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 11px; text-transform: uppercase; font-weight: 600;">New</h3>
+                    <div class="value" style="font-size: 20px; font-weight: bold; color: #4A9BC7;" id="modalNewValue">-</div>
+                    <div class="subtext" style="font-size: 10px; color: #7f8c8d; margin-top: 2px;" id="modalNewSubtext">-</div>
+                </div>
+                <div class="summary-card" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #E67E73;">
+                    <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 11px; text-transform: uppercase; font-weight: 600;">Review</h3>
+                    <div class="value" style="font-size: 20px; font-weight: bold; color: #E67E73;" id="modalReviewValue">-</div>
+                    <div class="subtext" style="font-size: 10px; color: #7f8c8d; margin-top: 2px;" id="modalReviewSubtext">-</div>
+                </div>
             </div>
             <p class="modal-summary-text" id="modalSummaryText"></p>
             <div class="modal-footer">
@@ -735,6 +753,19 @@
 
             const validTotals = totalVals.filter(v => v !== null);
             const rangeTotal  = validTotals.reduce((s, v) => s + v, 0);
+            const validNew = newVals.filter(v => v !== null);
+            const totalNew = validNew.reduce((s, v) => s + v, 0);
+            const validReview = reviewVals.filter(v => v !== null);
+            const totalReview = validReview.reduce((s, v) => s + v, 0);
+            const newPercent = Math.round((totalNew / rangeTotal) * 100);
+            const reviewPercent = Math.round((totalReview / rangeTotal) * 100);
+            document.getElementById('modalTotalValue').textContent = rangeTotal.toLocaleString();
+            document.getElementById('modalTotalSubtext').textContent = monthCount + ' months';
+            document.getElementById('modalNewValue').textContent = totalNew.toLocaleString();
+            document.getElementById('modalNewSubtext').textContent = newPercent + '%';
+            document.getElementById('modalReviewValue').textContent = totalReview.toLocaleString();
+            document.getElementById('modalReviewSubtext').textContent = reviewPercent + '%';
+            document.getElementById('modalExportDateRange').textContent = startLabel + ' – ' + endLabel;
             const startLabel  = months[startMonth] + ' ' + startYear;
             const endLabel    = months[endMonth]   + ' ' + endYear;
             const monthCount  = validTotals.length;
@@ -746,25 +777,41 @@
         }
 
         function exportModalChart() {
+            const mainTitle = document.querySelector('h1').textContent;
+            const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+            const header = document.querySelector('.modal-header');
+            const controls = document.querySelector('.modal-range-controls');
             const footer = document.querySelector('.modal-footer');
+            const exportHeader = document.getElementById('modalExportHeader');
+            const exportTitle = document.getElementById('modalExportTitle');
+            exportTitle.textContent = mainTitle;
+            header.style.display = 'none';
+            controls.style.display = 'none';
             footer.style.display = 'none';
+            exportHeader.style.display = 'block';
             html2canvas(document.querySelector('.modal-box'), {
                 backgroundColor: '#ffffff', scale: 2, logging: false
             }).then(canvas => {
+                header.style.display = 'flex';
+                controls.style.display = 'flex';
                 footer.style.display = 'flex';
+                exportHeader.style.display = 'none';
                 canvas.toBlob(function(blob) {
-                    const url  = URL.createObjectURL(blob);
+                    const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    const sm   = parseInt(document.getElementById('modalStartMonth').value);
-                    const sy   = document.getElementById('modalStartYear').value;
-                    const em   = parseInt(document.getElementById('modalEndMonth').value);
-                    const ey   = document.getElementById('modalEndYear').value;
+                    const sm = parseInt(document.getElementById('modalStartMonth').value);
+                    const sy = document.getElementById('modalStartYear').value;
+                    const em = parseInt(document.getElementById('modalEndMonth').value);
+                    const ey = document.getElementById('modalEndYear').value;
                     const date = new Date().toISOString().split('T')[0];
-                    link.download = 'Spiritual_Care_OOS_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.png';
+                    link.download = prefix + '_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.png';
                     link.href = url; link.click(); URL.revokeObjectURL(url);
                 });
             }).catch(error => {
+                header.style.display = 'flex';
+                controls.style.display = 'flex';
                 footer.style.display = 'flex';
+                exportHeader.style.display = 'none';
                 console.error('Modal export failed:', error);
                 alert('Export failed. Please try again.');
             });
@@ -791,9 +838,11 @@
                 canvas.toBlob(function(blob) {
                     const url  = URL.createObjectURL(blob);
                     const link = document.createElement('a');
+                    const mainTitle = document.querySelector('h1').textContent;
+                    const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
                     const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
                     const date = new Date().toISOString().split('T')[0];
-                    link.download = `Spiritual_Care_OOS_${periodLabel}_${date}.png`;
+                    link.download = `${prefix}_${periodLabel}_${date}.png`;
                     link.href = url;
                     link.click();
                     URL.revokeObjectURL(url);

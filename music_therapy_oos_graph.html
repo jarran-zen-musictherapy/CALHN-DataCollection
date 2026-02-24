@@ -292,6 +292,10 @@
     <!-- Date Range Modal -->
     <div id="dateRangeModal" class="modal-overlay" style="display:none;" onclick="handleModalOverlayClick(event)">
         <div class="modal-box">
+            <div id="modalExportHeader" style="display: none;">
+                <h2 id="modalExportTitle"></h2>
+                <p id="modalExportDateRange"></p>
+            </div>
             <div class="modal-header">
                 <h2>&#128197; Custom Date Range</h2>
                 <button class="modal-close" onclick="closeDateRangeModal()" title="Close">&#10005;</button>
@@ -324,6 +328,37 @@
             </div>
             <div class="modal-chart-container">
                 <canvas id="modalChart"></canvas>
+            </div>
+            <div class="summary">
+                <!-- Total -->
+                <div class="summary-card">
+                    <h3 id="modalTotalLabel">Total</h3>
+                    <div class="value" id="modalTotalValue">-</div>
+                    <div class="subtext" id="modalTotalSubtext">-</div>
+                </div>
+                
+                <!-- New -->
+                <div class="summary-card">
+                    <h3>New Sessions</h3>
+                    <div class="value" id="modalNewValue">-</div>
+                    <div class="subtext" id="modalNewSubtext">-</div>
+                </div>
+                
+                <!-- Review -->
+                <div class="summary-card">
+                    <h3>Review Sessions</h3>
+                    <div class="value" id="modalReviewValue">-</div>
+                    <div class="subtext" id="modalReviewSubtext">-</div>
+                </div>
+
+                <!-- Ratio Display -->
+                <div class="summary-card">
+                    <h3>Session Breakdown</h3>
+                    <div class="ratio-display">
+                        <div class="ratio-item new" id="modalNewRatio">-</div>
+                        <div class="ratio-item review" id="modalReviewRatio">-</div>
+                    </div>
+                </div>
             </div>
             <p class="modal-summary-text" id="modalSummaryText"></p>
             <div class="modal-footer">
@@ -799,11 +834,33 @@
                 }
             });
 
-            const validTotals  = totalVals.filter(v => v !== null);
-            const rangeTotal   = validTotals.reduce((s, v) => s + v, 0);
-            const startLabel   = months[startMonth] + ' ' + startYear;
-            const endLabel     = months[endMonth]   + ' ' + endYear;
-            const monthCount   = validTotals.length;
+            // Calculate range-specific metrics
+            const validTotals = totalVals.filter(v => v !== null);
+            const rangeTotal = validTotals.reduce((s, v) => s + v, 0);
+            const validNew = newVals.filter((v, i) => v !== null && reviewVals[i] !== null);
+            const validReview = reviewVals.filter((v, i) => v !== null && newVals[i] !== null);
+            const totalNew = validNew.reduce((s, v) => s + v, 0);
+            const totalReview = validReview.reduce((s, v) => s + v, 0);
+            const newPercent = rangeTotal > 0 ? Math.round((totalNew / rangeTotal) * 100) : 0;
+            const reviewPercent = rangeTotal > 0 ? Math.round((totalReview / rangeTotal) * 100) : 0;
+
+            // Populate modal summary cards
+            document.getElementById('modalTotalLabel').textContent = 'Range Total';
+            document.getElementById('modalTotalValue').textContent = rangeTotal.toLocaleString();
+            document.getElementById('modalTotalSubtext').textContent = validTotals.length + ' months';
+            document.getElementById('modalNewValue').textContent = totalNew.toLocaleString();
+            document.getElementById('modalNewSubtext').textContent = newPercent + '% of total';
+            document.getElementById('modalReviewValue').textContent = totalReview.toLocaleString();
+            document.getElementById('modalReviewSubtext').textContent = reviewPercent + '% of total';
+            document.getElementById('modalNewRatio').textContent = newPercent + '% New';
+            document.getElementById('modalReviewRatio').textContent = reviewPercent + '% Review';
+
+            // Set export date range text
+            const startLabel = months[startMonth] + ' ' + startYear;
+            const endLabel = months[endMonth] + ' ' + endYear;
+            document.getElementById('modalExportDateRange').textContent = startLabel + ' to ' + endLabel;
+
+            const monthCount = validTotals.length;
             document.getElementById('modalSummaryText').textContent =
                 startLabel + ' \u2013 ' + endLabel + ' \u00b7 ' +
                 monthCount + ' month' + (monthCount !== 1 ? 's' : '') + ' \u00b7 ' +
@@ -812,25 +869,49 @@
         }
 
         function exportModalChart() {
+            const header = document.querySelector('.modal-header');
+            const controls = document.querySelector('.modal-range-controls');
             const footer = document.querySelector('.modal-footer');
+            const exportHeader = document.getElementById('modalExportHeader');
+
+            // Hide UI elements
+            header.style.display = 'none';
+            controls.style.display = 'none';
             footer.style.display = 'none';
+            exportHeader.style.display = 'block';
+
+            // Set title
+            const mainTitle = document.querySelector('h1').textContent;
+            document.getElementById('modalExportTitle').textContent = mainTitle;
+
             html2canvas(document.querySelector('.modal-box'), {
                 backgroundColor: '#ffffff', scale: 2, logging: false
             }).then(canvas => {
+                // Restore UI
+                header.style.display = 'flex';
+                controls.style.display = 'flex';
                 footer.style.display = 'flex';
+                exportHeader.style.display = 'none';
+
                 canvas.toBlob(function(blob) {
-                    const url  = URL.createObjectURL(blob);
+                    const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    const sm   = parseInt(document.getElementById('modalStartMonth').value);
-                    const sy   = document.getElementById('modalStartYear').value;
-                    const em   = parseInt(document.getElementById('modalEndMonth').value);
-                    const ey   = document.getElementById('modalEndYear').value;
+                    const sm = parseInt(document.getElementById('modalStartMonth').value);
+                    const sy = document.getElementById('modalStartYear').value;
+                    const em = parseInt(document.getElementById('modalEndMonth').value);
+                    const ey = document.getElementById('modalEndYear').value;
                     const date = new Date().toISOString().split('T')[0];
-                    link.download = 'Music_Therapy_OOS_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.png';
+                    // Dynamic filename
+                    const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+                    link.download = prefix + '_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.png';
                     link.href = url; link.click(); URL.revokeObjectURL(url);
                 });
             }).catch(error => {
+                // Restore UI on error
+                header.style.display = 'flex';
+                controls.style.display = 'flex';
                 footer.style.display = 'flex';
+                exportHeader.style.display = 'none';
                 console.error('Modal export failed:', error);
                 alert('Export failed. Please try again.');
             });
@@ -867,7 +948,10 @@
                     const link = document.createElement('a');
                     const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
                     const date = new Date().toISOString().split('T')[0];
-                    link.download = `Music_Therapy_OOS_${periodLabel}_${date}.png`;
+                    // Dynamic filename
+                    const mainTitle = document.querySelector('h1').textContent;
+                    const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+                    link.download = prefix + '_' + periodLabel + '_' + date + '.png';
                     link.href = url;
                     link.click();
                     URL.revokeObjectURL(url);
