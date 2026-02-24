@@ -195,34 +195,30 @@
         </div>
 
         <p class="legend-note" id="legendNote">Stacked bars show annual New + Review composition</p>
-        <p class="estimate-note">&#9888; New/Review split is estimated (35%/65%) — update with actual data when available</p>
+        <p class="estimate-note">&#9432; New/Review breakdown available for Jul–Dec 2025. All other periods shown as total OoS only.</p>
     </div>
 
     <script>
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // 2024 – Jul–Nov only; split 35% New / 65% Review applied to monthly totals
-        const data2024New    = [null, null, null, null, null, null, 13, 2, 4, 5, 2, null];
-        const data2024Review = [null, null, null, null, null, null, 23, 3, 6, 9, 5, null];
+        // 2024 – Jul–Nov only; total OoS only (no New/Review breakdown)
         const data2024Total  = [null, null, null, null, null, null, 36, 5, 10, 14, 7, null];
 
-        // 2025 – full year; split 35% New / 65% Review applied to monthly totals
-        const data2025New    = [2, 1, 9, 6, 5, 5, 8, 10, 14, 13, 1, 13];
-        const data2025Review = [5, 2, 18, 12, 8, 10, 16, 19, 25, 24, 3, 24];
-        const data2025Total  = data2025New.map((v, i) => v + data2025Review[i]);
+        // 2025 – Jan–Jun: total only (no real breakdown); Jul–Dec: actual New/Review
+        const data2025New    = [null, null, null, null, null, null, 3, 3, 14, 11, 2, 13];
+        const data2025Review = [null, null, null, null, null, null, 21, 26, 25, 26, 3, 24];
+        const data2025Total  = [7, 3, 27, 18, 13, 15, 24, 29, 39, 37, 5, 37];
 
-        // 2026 – January only
-        const data2026New    = [14, null, null, null, null, null, null, null, null, null, null, null];
-        const data2026Review = [25, null, null, null, null, null, null, null, null, null, null, null];
+        // 2026 – January only; total OoS only (no real New/Review breakdown)
         const data2026Total  = [39, null, null, null, null, null, null, null, null, null, null, null];
 
-        // Annual totals for "All Time" stacked bar chart
+        // Annual totals for "All Time" chart – all shown as total-only
         const annualAT = {
-            labels:  ['2024',         '2025',      '2026'],
-            new:     [26,             87,           14],
-            review:  [46,             166,          25],
-            total:   [72,             253,          39],
-            subtext: ['Jul–Nov only', 'Full year',  'January YTD']
+            labels:  ['2024',         '2025',       '2026'],
+            new:     [null,            null,          null],
+            review:  [null,            null,          null],
+            total:   [72,              254,           39],
+            subtext: ['Jul–Nov only',  'Full year',   'January YTD']
         };
 
         let chart;
@@ -236,7 +232,7 @@
 
             // ── ALL TIME: stacked bar chart, x-axis = years ──────────────────
             if (period === 'all') {
-                legendNote.textContent = 'Stacked bars show annual New + Review composition';
+                legendNote.textContent = 'Bars show annual total OoS (New/Review breakdown not fully available)';
 
                 chart = new Chart(ctx, {
                     type: 'bar',
@@ -245,7 +241,7 @@
                         datasets: [
                             {
                                 label: 'Review',
-                                data: annualAT.review,
+                                data: annualAT.review.map((v, i) => annualAT.new[i] !== null ? v : null),
                                 backgroundColor: 'rgba(230, 126, 115, 0.75)',
                                 borderColor: '#E67E73',
                                 borderWidth: 1.5
@@ -255,6 +251,13 @@
                                 data: annualAT.new,
                                 backgroundColor: 'rgba(74, 155, 199, 0.75)',
                                 borderColor: '#4A9BC7',
+                                borderWidth: 1.5
+                            },
+                            {
+                                label: 'Total OoS (no breakdown)',
+                                data: annualAT.total.map((v, i) => annualAT.new[i] === null ? v : null),
+                                backgroundColor: 'rgba(91, 160, 138, 0.75)',
+                                borderColor: '#5BA08A',
                                 borderWidth: 1.5
                             }
                         ]
@@ -307,24 +310,95 @@
                 return;
             }
 
-            // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
-            legendNote.textContent = 'Teal line = Total OoS | Stacked areas show composition (New + Review)';
-
-            let newData, reviewData, totalData;
+            // ── 2024: line chart showing monthly totals only ─────────────────
             if (period === '2024') {
-                newData = data2024New; reviewData = data2024Review; totalData = data2024Total;
-            } else if (period === '2025') {
-                newData = data2025New; reviewData = data2025Review; totalData = data2025Total;
-            } else {
-                newData = data2026New; reviewData = data2026Review; totalData = data2026Total;
+                legendNote.textContent = 'Total OoS per month (New/Review breakdown not available for 2024)';
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: '2024 Total OoS',
+                            data: data2024Total,
+                            backgroundColor: 'rgba(91, 160, 138, 0.75)',
+                            borderColor: '#5BA08A',
+                            borderWidth: 1.5,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y === null) return null;
+                                        return '2024 Total: ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
+                        }
+                    }
+                });
+                return;
             }
 
-            const isSparse = period === '2026' || period === '2024';
-            const ptRadius  = isSparse ? 5 : 3;
-            const ptHover   = isSparse ? 8 : 6;
+            // ── 2026: line chart showing monthly totals only ─────────────────
+            if (period === '2026') {
+                legendNote.textContent = 'Total OoS per month (New/Review breakdown not available for 2026)';
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: '2026 Total OoS',
+                            data: data2026Total,
+                            backgroundColor: 'rgba(91, 160, 138, 0.75)',
+                            borderColor: '#5BA08A',
+                            borderWidth: 1.5,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y === null) return null;
+                                        return '2026 Total: ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
+                        }
+                    }
+                });
+                return;
+            }
 
-            const newStacked = newData.map((val, i) =>
-                val !== null && reviewData[i] !== null ? val + reviewData[i] : null
+            // ── 2025: stacked area (Jul–Dec real N/R) + total line (all months) ──
+            legendNote.textContent = 'Teal line = Total OoS | Stacked areas show Jul–Dec New/Review (real data); Jan–Jun total shown without breakdown';
+
+            const newStacked = data2025New.map((val, i) =>
+                val !== null && data2025Review[i] !== null ? val + data2025Review[i] : null
             );
 
             chart = new Chart(ctx, {
@@ -333,30 +407,30 @@
                     labels: months,
                     datasets: [
                         {
-                            label: period + ' Review',
-                            data: reviewData,
+                            label: '2025 Review',
+                            data: data2025Review,
                             borderColor: '#E67E73',
                             backgroundColor: 'rgba(230, 126, 115, 0.5)',
                             borderWidth: 2,
                             tension: 0.4,
                             fill: 'origin',
-                            pointRadius: ptRadius,
-                            pointHoverRadius: ptHover
+                            pointRadius: 3,
+                            pointHoverRadius: 6
                         },
                         {
-                            label: period + ' New',
+                            label: '2025 New',
                             data: newStacked,
                             borderColor: '#4A9BC7',
                             backgroundColor: 'rgba(74, 155, 199, 0.5)',
                             borderWidth: 2,
                             tension: 0.4,
                             fill: '-1',
-                            pointRadius: ptRadius,
-                            pointHoverRadius: ptHover
+                            pointRadius: 3,
+                            pointHoverRadius: 6
                         },
                         {
-                            label: period + ' Total',
-                            data: totalData,
+                            label: '2025 Total',
+                            data: data2025Total,
                             borderColor: '#5BA08A',
                             backgroundColor: 'transparent',
                             borderWidth: 2.5,
@@ -386,7 +460,7 @@
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
                                     if (context.dataset.label.includes('New')) {
-                                        const actualNew = newData[context.dataIndex];
+                                        const actualNew = data2025New[context.dataIndex];
                                         if (actualNew === null) return null;
                                         return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
                                     }
@@ -399,10 +473,7 @@
                         y: {
                             beginAtZero: true,
                             title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
-                            ticks: {
-                                font: { size: 12 },
-                                callback: function(value) { return value.toLocaleString(); }
-                            },
+                            ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } },
                             grid: { color: 'rgba(0, 0, 0, 0.05)' }
                         },
                         x: {
@@ -417,49 +488,49 @@
         }
 
         function updateSummary(period) {
-            let totalNew, totalReview, total, label, subtext;
+            const noBreakdown = function(lbl, tot, sub) {
+                document.getElementById('totalLabel').textContent    = lbl;
+                document.getElementById('totalValue').textContent    = tot.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = sub;
+                document.getElementById('newValue').textContent      = 'N/A';
+                document.getElementById('newSubtext').textContent    = 'No breakdown available';
+                document.getElementById('reviewValue').textContent   = 'N/A';
+                document.getElementById('reviewSubtext').textContent = 'No breakdown available';
+                document.getElementById('newRatio').textContent      = 'N/A New';
+                document.getElementById('reviewRatio').textContent   = 'N/A Review';
+            };
 
             if (period === '2024') {
-                totalNew    = 26;
-                totalReview = 46;
-                total       = 72;
-                label       = '2024 Total';
-                subtext     = 'Jul–Nov only';
-            } else if (period === '2025') {
-                totalNew    = data2025New.reduce((s, v) => s + v, 0);
-                totalReview = data2025Review.reduce((s, v) => s + v, 0);
-                total       = totalNew + totalReview;
-                label       = '2025 Total';
-                subtext     = 'Full year';
+                const total = data2024Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                noBreakdown('2024 Total', total, 'Jul–Nov only');
             } else if (period === '2026') {
-                totalNew    = 14;
-                totalReview = 25;
-                total       = 39;
-                label       = '2026 Total';
-                subtext     = 'January only';
-            } else { // all
-                totalNew    = annualAT.new.reduce((s, v) => s + v, 0);
-                totalReview = annualAT.review.reduce((s, v) => s + v, 0);
-                total       = totalNew + totalReview;
-                label       = 'All Time Total';
-                subtext     = '2024 + 2025 + 2026 YTD';
+                noBreakdown('2026 Total', 39, 'January only');
+            } else if (period === 'all') {
+                const total = annualAT.total.reduce((s, v) => s + v, 0);
+                noBreakdown('All Time Total', total, '2024 + 2025 + 2026 YTD');
+            } else { // 2025
+                // Full year total (incl. estimated Jan–Jun)
+                const total       = data2025Total.reduce((s, v) => s + v, 0);
+                // Jul–Dec real N/R only
+                const totalNew    = data2025New.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const totalReview = data2025Review.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const julDecTotal = totalNew + totalReview;
+                const newPct      = Math.round((totalNew    / julDecTotal) * 100);
+                const reviewPct   = Math.round((totalReview / julDecTotal) * 100);
+
+                document.getElementById('totalLabel').textContent    = '2025 Total';
+                document.getElementById('totalValue').textContent    = total.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = 'Full year';
+
+                document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                document.getElementById('newSubtext').textContent    = newPct + '% of Jul–Dec total';
+
+                document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                document.getElementById('reviewSubtext').textContent = reviewPct + '% of Jul–Dec total';
+
+                document.getElementById('newRatio').textContent    = newPct + '% New';
+                document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
             }
-
-            const newPct    = Math.round((totalNew    / total) * 100);
-            const reviewPct = Math.round((totalReview / total) * 100);
-
-            document.getElementById('totalLabel').textContent    = label;
-            document.getElementById('totalValue').textContent    = total.toLocaleString();
-            document.getElementById('totalSubtext').textContent  = subtext;
-
-            document.getElementById('newValue').textContent      = totalNew.toLocaleString();
-            document.getElementById('newSubtext').textContent    = newPct + '% of total';
-
-            document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
-            document.getElementById('reviewSubtext').textContent = reviewPct + '% of total';
-
-            document.getElementById('newRatio').textContent    = newPct + '% New';
-            document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
         }
 
         function setTimePeriod(period, event) {

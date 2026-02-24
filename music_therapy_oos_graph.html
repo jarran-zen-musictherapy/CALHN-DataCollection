@@ -198,22 +198,22 @@
         // 2024 data (Jul–Dec only – total OoS, no New/Review breakdown)
         const data2024Total = [null, null, null, null, null, null, 28, 82, 60, 83, 43, 16];
 
-        // 2025 NEW vs REVIEW (replace with actual data)
-        const data2025New = [6, 1, 1, 8, 22, 51, 46, 53, 51, 51, 36, 32];
-        const data2025Review = [5, 0, 1, 14, 41, 95, 84, 98, 94, 96, 68, 59];
+        // 2025 NEW vs REVIEW – Jan–Jun estimated; Jul–Dec actual
+        const data2025New = [6, 1, 1, 8, 22, 51, 28, 27, 50, 42, 33, 29];
+        const data2025Review = [5, 0, 1, 14, 41, 95, 102, 124, 95, 105, 71, 62];
         const data2025Total = data2025New.map((val, i) => val + data2025Review[i]);
 
-        // 2026 data (Jan only - replace with actual data)
-        const data2026New = [60, null, null, null, null, null, null, null, null, null, null, null];
-        const data2026Review = [106, null, null, null, null, null, null, null, null, null, null, null];
+        // 2026 data (Jan only)
+        const data2026New = [57, null, null, null, null, null, null, null, null, null, null, null];
+        const data2026Review = [109, null, null, null, null, null, null, null, null, null, null, null];
         const data2026Total = [166, null, null, null, null, null, null, null, null, null, null, null];
 
         // Annual totals for "All Time" stacked bar chart
         // 2024: null new/review (total only) | 2025: full year | 2026: Jan YTD
         const annualMT = {
             labels:  ['2024',         '2025',       '2026'],
-            new:     [null,            358,          60],
-            review:  [null,            655,          106],
+            new:     [null,            298,          57],
+            review:  [null,            715,          109],
             total:   [312,             1013,         166],
             subtext: ['Jul–Dec only',  'Full year',  'January YTD']
         };
@@ -494,8 +494,8 @@
                 label = '2025 Total';
                 subtext = 'Full year';
             } else if (period === '2026') {
-                totalNew = 60;
-                totalReview = 106;
+                totalNew = 57;
+                totalReview = 109;
                 total = 166;
                 label = '2026 Total';
                 subtext = 'January only';
@@ -503,8 +503,8 @@
                 const new2025 = data2025New.reduce((sum, val) => sum + val, 0);
                 const review2025 = data2025Review.reduce((sum, val) => sum + val, 0);
                 const total2024 = data2024Total.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                totalNew = new2025 + 60;
-                totalReview = review2025 + 106;
+                totalNew = new2025 + 57;
+                totalReview = review2025 + 109;
                 total = totalNew + totalReview + total2024;
                 label = 'All Time Total';
                 subtext = '2024–2026 YTD';
