@@ -81,7 +81,19 @@
         .card.spiritual-care {
             border-left: 4px solid #4A9BC7;
         }
-        
+        .card.mood-tracker {
+            border-left: 4px solid #3fb950;
+        }
+        .section-heading {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.6);
+            margin: 24px 0 10px;
+            padding-left: 2px;
+        }
+
         .footer {
             background: white;
             padding: 20px;
@@ -111,6 +123,7 @@
             <p class="subtitle"> Reporting Dashboard</p>
         </div>
 
+        <div class="section-heading">Data Visualisers</div>
         <div class="cards">
             <!-- Music Therapy -->
             <a href="music_therapy_oos_graph.html" class="card music-therapy">
@@ -143,6 +156,19 @@
                     Interactive visualisation showing the breakdown of new patient sessions versus review sessions for Art Therapy. Includes time period selector (2024/2025/2026/All Time) and PNG export.
                 </div>
                 <span class="badge">Explore</span>
+            </a>
+        </div>
+
+        <div class="section-heading">Clinical Tools</div>
+        <div class="cards">
+            <!-- Mood Tracker -->
+            <a href="./i-had-a-session.html" class="card mood-tracker">
+                <div class="card-icon">♬</div>
+                <div class="card-title">I Had a Session<br>Observed Mood Tracker</div>
+                <div class="card-description">
+                    Log pre/post observed mood scores for MT sessions. Saves locally with optional Google Sheets sync.
+                </div>
+                <span class="badge" style="background: rgba(63,185,80,0.15); color: #3fb950;">Open</span>
             </a>
         </div>
 

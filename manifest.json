@@ -1,0 +1,20 @@
+{
+  "name": "CALHN MT — I Had a Session",
+  "short_name": "MT Session",
+  "start_url": "/CALHN-DataCollection/i-had-a-session.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/CALHN-DataCollection/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/CALHN-DataCollection/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

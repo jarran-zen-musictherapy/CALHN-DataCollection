@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="theme-color" content="#0d1117" />
+<link rel="manifest" href="/CALHN-DataCollection/manifest.json" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/icon-192.png" />
 <title>I Had a Session — CALHN MT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
@@ -805,6 +807,14 @@ function init() {
 }
 
 init();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js');
+    });
+  }
 </script>
 </body>
 </html>
