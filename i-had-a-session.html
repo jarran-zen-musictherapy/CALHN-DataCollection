@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#0d1117" />
+<title>I Had a Session — CALHN MT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #21262d;
+    --border2: #30363d;
+    --muted: #484f58;
+    --subtle: #8b949e;
+    --text: #c9d1d9;
+    --bright: #e6edf3;
+    --blue: #388bfd;
+    --blue-bg: #1f2d3d;
+    --green: #3fb950;
+    --green-dark: #238636;
+    --green-mid: #1a7f37;
+    --yellow: #d29922;
+    --red: #f85149;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button {
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  input {
+    font-family: var(--font);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 13px;
+    width: 100%;
+  }
+  input:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+  .fade-up { animation: fadeUp 0.2s ease forwards; }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Header ── */
+  #header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #header-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #238636, #3fb950);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+  #header-title { font-weight: 700; font-size: 15px; color: var(--bright); letter-spacing: -0.02em; }
+  #header-sub   { font-size: 11px; color: var(--subtle); margin-top: 1px; }
+  #tab-bar {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: var(--subtle);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .tab-btn.active {
+    background: var(--border);
+    color: var(--bright);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #main { flex: 1; padding: 24px 20px 40px; max-width: 520px; margin: 0 auto; width: 100%; }
+
+  /* ── Views ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Mode toggle ── */
+  .mode-toggle { display: flex; gap: 8px; margin-bottom: 28px; }
+  .mode-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--subtle);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .mode-btn.active {
+    background: var(--blue-bg);
+    border-color: var(--blue);
+    color: var(--blue);
+    font-weight: 600;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--subtle);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── Score grid ── */
+  .score-section { margin-bottom: 28px; }
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .score-btn {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 2px solid var(--border2);
+    background: transparent;
+    color: var(--subtle);
+    font-size: 17px;
+    font-weight: 400;
+    width: 100%;
+  }
+  .score-btn:hover { border-color: var(--blue) !important; color: var(--bright) !important; transform: translateY(-1px); }
+  .score-anchor {
+    font-size: 13px;
+    font-style: italic;
+    min-height: 20px;
+    transition: color 0.15s;
+  }
+
+  /* ── Delta card ── */
+  #delta-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  #delta-card.visible { display: flex; }
+  .delta-col { text-align: center; }
+  .delta-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .delta-val   { font-size: 26px; font-weight: 700; }
+  .delta-arrow { color: var(--muted); font-size: 18px; }
+  .delta-change-col { text-align: right; }
+
+  /* ── Note input ── */
+  .note-section { margin-bottom: 20px; }
+  .note-sublabel { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+
+  /* ── Save button ── */
+  #save-btn {
+    width: 100%;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--muted);
+  }
+  #save-btn.ready {
+    background: var(--green-mid);
+    border-color: #2ea043;
+    color: #fff;
+  }
+  #save-btn.ready:hover { background: #1f6feb; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(56,139,253,0.25); }
+  #save-btn.saved {
+    background: var(--green-dark);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  /* ── Retro date ── */
+  #retro-date-section { display: none; margin-bottom: 24px; }
+  #retro-date-section.visible { display: block; }
+
+  /* ── Scale reference ── */
+  #scale-ref {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  #scale-ref .section-label { margin-bottom: 10px; color: var(--muted); }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 20px;
+  }
+  .ref-row { display: flex; gap: 8px; align-items: baseline; }
+  .ref-num  { font-size: 12px; font-weight: 700; min-width: 14px; }
+  .ref-text { font-size: 11px; color: var(--subtle); }
+
+  /* ── Log view ── */
+  #summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-val   { font-size: 20px; font-weight: 700; color: var(--bright); }
+  .stat-label { font-size: 11px; color: var(--subtle); margin-top: 2px; }
+
+  #session-list { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; margin-bottom: 16px; }
+  .session-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .session-meta { flex: 1; }
+  .session-date { font-size: 12px; color: var(--muted); }
+  .session-note { font-size: 12px; color: var(--subtle); margin-top: 3px; font-style: italic; }
+  .session-scores { display: flex; gap: 8px; align-items: center; }
+  .session-score { font-size: 14px; font-weight: 600; }
+  .session-arrow { color: var(--muted); font-size: 12px; }
+  .session-delta { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+
+  #log-actions { display: flex; gap: 8px; }
+  #export-btn {
+    flex: 1;
+    background: #1f6feb;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  #export-btn:hover { background: #388bfd; }
+  #clear-btn, #confirm-clear-btn, #cancel-clear-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--subtle);
+    font-size: 13px;
+  }
+  #confirm-clear-btn {
+    background: #2d1b1b;
+    border-color: #6e2020;
+    color: var(--red);
+    display: none;
+  }
+  #cancel-clear-btn { display: none; }
+
+  #empty-log {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 20px;
+    font-size: 14px;
+    display: none;
+  }
+
+  /* ── Sync status ── */
+  #sync-status {
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 18px;
+    color: var(--subtle);
+    text-align: center;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div id="header">
+    <div id="header-icon">♬</div>
+    <div>
+      <div id="header-title">I had a session…</div>
+      <div id="header-sub">Observed Mood · CALHN MT</div>
+    </div>
+    <div id="tab-bar">
+      <button class="tab-btn active" id="tab-entry" onclick="switchTab('entry')">New Entry</button>
+      <button class="tab-btn" id="tab-log" onclick="switchTab('log')">Log (0)</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- ── ENTRY VIEW ── -->
+    <div id="view-entry" class="view active">
+
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-live" onclick="setMode('live')">Live session</button>
+        <button class="mode-btn" id="mode-retro" onclick="setMode('retro')">Retrospective</button>
+      </div>
+
+      <!-- Retro date -->
+      <div id="retro-date-section">
+        <div class="section-label">Session Date &amp; Time</div>
+        <input type="datetime-local" id="retro-date" />
+      </div>
+
+      <!-- Pre score -->
+      <div class="score-section" id="pre-section">
+        <div class="section-label">Observed Mood — Pre</div>
+        <div class="score-grid" id="pre-grid"></div>
+        <div class="score-anchor" id="pre-anchor"></div>
+      </div>
+
+      <!-- Post score -->
+      <div class="score-section" id="post-section">
+        <div class="section-label">Observed Mood — Post</div>
+        <div class="score-grid" id="post-grid"></div>
+        <div class="score-anchor" id="post-anchor"></div>
+      </div>
+
+      <!-- Delta preview -->
+      <div id="delta-card">
+        <div class="delta-col">
+          <div class="delta-label">PRE</div>
+          <div class="delta-val" id="delta-pre">—</div>
+        </div>
+        <div class="delta-arrow">→</div>
+        <div class="delta-col">
+          <div class="delta-label">POST</div>
+          <div class="delta-val" id="delta-post">—</div>
+        </div>
+        <div class="delta-change-col">
+          <div class="delta-label">CHANGE</div>
+          <div class="delta-val" id="delta-change">—</div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="note-section">
+        <div class="section-label">Note <span class="note-sublabel">(optional)</span></div>
+        <input type="text" id="note-input" placeholder="Ward, initials, intervention type…" maxlength="120" />
+      </div>
+
+      <!-- Save -->
+      <button id="save-btn" onclick="saveSession()" disabled>Log this session</button>
+      <div id="sync-status"></div>
+
+      <!-- Scale ref -->
+      <div id="scale-ref">
+        <div class="section-label">Scale Reference</div>
+        <div class="ref-grid" id="ref-grid"></div>
+      </div>
+
+    </div><!-- /view-entry -->
+
+    <!-- ── LOG VIEW ── -->
+    <div id="view-log" class="view">
+      <div id="summary-strip"></div>
+      <div id="empty-log">No sessions logged yet.</div>
+      <div id="session-list"></div>
+      <div id="log-actions">
+        <button id="export-btn" onclick="exportCSV()">Export CSV</button>
+        <button id="clear-btn" onclick="startClear()">Clear all</button>
+        <button id="confirm-clear-btn" onclick="confirmClear()">Confirm clear</button>
+        <button id="cancel-clear-btn" onclick="cancelClear()">Cancel</button>
+      </div>
+    </div><!-- /view-log -->
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "calhn_mood_sessions";
+const SHEETS_URL  = ""; // Paste your Google Apps Script URL here
+
+const ANCHORS = {
+  1:  "Severely distressed",
+  2:  "Markedly distressed",
+  3:  "Distressed",
+  4:  "Mildly distressed",
+  5:  "Neutral / flat",
+  6:  "Settled",
+  7:  "Engaged",
+  8:  "Positive",
+  9:  "Noticeably elevated",
+  10: "Bright / animated",
+};
+
+function scoreColor(n) {
+  if (n <= 3) return { main: "#f85149", bg: "rgba(248,81,73,0.12)" };
+  if (n <= 5) return { main: "#d29922", bg: "rgba(210,153,34,0.12)" };
+  if (n <= 7) return { main: "#3fb950", bg: "rgba(63,185,80,0.12)" };
+  return       { main: "#58a6ff", bg: "rgba(88,166,255,0.12)" };
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let state = {
+  view:    "entry",
+  mode:    "live",
+  pre:     null,
+  post:    null,
+  sessions: [],
+};
+
+function loadSessions() {
+  try { state.sessions = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+  catch { state.sessions = []; }
+}
+
+function persistSessions() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  state.view = tab;
+  document.getElementById("view-entry").classList.toggle("active", tab === "entry");
+  document.getElementById("view-log").classList.toggle("active",   tab === "log");
+  document.getElementById("tab-entry").classList.toggle("active",  tab === "entry");
+  document.getElementById("tab-log").classList.toggle("active",    tab === "log");
+  if (tab === "log") renderLog();
+}
+
+// ── Mode ──────────────────────────────────────────────────────────────────────
+
+function setMode(m) {
+  state.mode = m;
+  document.getElementById("mode-live").classList.toggle("active",  m === "live");
+  document.getElementById("mode-retro").classList.toggle("active", m === "retro");
+  document.getElementById("retro-date-section").classList.toggle("visible", m === "retro");
+}
+
+// ── Score pickers ─────────────────────────────────────────────────────────────
+
+function buildGrid(id, type) {
+  const grid = document.getElementById(id);
+  grid.innerHTML = "";
+  for (let n = 1; n <= 10; n++) {
+    const btn = document.createElement("button");
+    btn.className = "score-btn";
+    btn.textContent = n;
+    btn.dataset.n = n;
+    btn.onclick = () => selectScore(type, n);
+    grid.appendChild(btn);
+  }
+}
+
+function selectScore(type, n) {
+  state[type] = n;
+  const gridId  = type === "pre" ? "pre-grid"   : "post-grid";
+  const anchorId = type === "pre" ? "pre-anchor" : "post-anchor";
+  const grid = document.getElementById(gridId);
+  const c = scoreColor(n);
+
+  grid.querySelectorAll(".score-btn").forEach(btn => {
+    const bn = Number(btn.dataset.n);
+    const sel = bn === n;
+    const bc = scoreColor(bn);
+    btn.style.border      = sel ? `2px solid ${bc.main}` : "2px solid var(--border2)";
+    btn.style.background  = sel ? bc.bg : "transparent";
+    btn.style.color       = sel ? bc.main : "var(--subtle)";
+    btn.style.fontWeight  = sel ? "700" : "400";
+  });
+
+  const anchor = document.getElementById(anchorId);
+  anchor.textContent = `${n} — ${ANCHORS[n]}`;
+  anchor.style.color = c.main;
+
+  updateDelta();
+  updateSaveBtn();
+}
+
+// ── Delta ─────────────────────────────────────────────────────────────────────
+
+function updateDelta() {
+  const card = document.getElementById("delta-card");
+  if (!state.pre || !state.post) { card.classList.remove("visible"); return; }
+
+  const delta = state.post - state.pre;
+  const sign  = delta > 0 ? "+" : "";
+  const dColor = delta > 0 ? "#3fb950" : delta < 0 ? "#f85149" : "var(--subtle)";
+
+  card.classList.add("visible");
+  const preEl  = document.getElementById("delta-pre");
+  const postEl = document.getElementById("delta-post");
+  const chEl   = document.getElementById("delta-change");
+  const cp = scoreColor(state.pre);
+  const cp2 = scoreColor(state.post);
+
+  preEl.textContent  = state.pre;
+  preEl.style.color  = cp.main;
+  postEl.textContent = state.post;
+  postEl.style.color = cp2.main;
+  chEl.textContent   = `${sign}${delta}`;
+  chEl.style.color   = dColor;
+}
+
+// ── Save button state ─────────────────────────────────────────────────────────
+
+function updateSaveBtn() {
+  const btn = document.getElementById("save-btn");
+  const ready = state.pre !== null && state.post !== null;
+  btn.disabled = !ready;
+  btn.classList.toggle("ready", ready);
+  btn.classList.remove("saved");
+  btn.textContent = "Log this session";
+}
+
+// ── Save session ──────────────────────────────────────────────────────────────
+
+async function saveSession() {
+  if (!state.pre || !state.post) return;
+
+  const note = document.getElementById("note-input").value.trim();
+  const retroVal = document.getElementById("retro-date").value;
+  const date = state.mode === "retro" && retroVal
+    ? new Date(retroVal).toISOString()
+    : new Date().toISOString();
+
+  const session = { pre: state.pre, post: state.post, note, date, mode: state.mode };
+
+  // Save locally
+  state.sessions.push(session);
+  persistSessions();
+
+  // Update UI immediately
+  const btn = document.getElementById("save-btn");
+  btn.classList.remove("ready");
+  btn.classList.add("saved");
+  btn.textContent = "✓ Session saved";
+  btn.disabled = true;
+
+  // Update tab count
+  document.getElementById("tab-log").textContent = `Log (${state.sessions.length})`;
+
+  // Reset fields
+  state.pre = null;
+  state.post = null;
+  document.getElementById("note-input").value = "";
+  document.getElementById("pre-grid").querySelectorAll(".score-btn").forEach(resetBtn);
+  document.getElementById("post-grid").querySelectorAll(".score-btn").forEach(resetBtn);
+  document.getElementById("pre-anchor").textContent = "";
+  document.getElementById("post-anchor").textContent = "";
+  document.getElementById("delta-card").classList.remove("visible");
+
+  // Reset after delay
+  setTimeout(() => {
+    btn.classList.remove("saved");
+    btn.disabled = true;
+    btn.textContent = "Log this session";
+  }, 2200);
+
+  // Sync to Google Sheets
+  await syncToSheets(session);
+}
+
+function resetBtn(btn) {
+  btn.style.border = "2px solid var(--border2)";
+  btn.style.background = "transparent";
+  btn.style.color = "var(--subtle)";
+  btn.style.fontWeight = "400";
+}
+
+// ── Google Sheets sync ────────────────────────────────────────────────────────
+
+async function syncToSheets(session) {
+  const status = document.getElementById("sync-status");
+  if (!SHEETS_URL) return;
+
+  status.style.display = "block";
+  status.style.color = "var(--subtle)";
+  status.textContent = "Syncing…";
+
+  try {
+    await fetch(SHEETS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(session),
+    });
+    status.style.color = "var(--green)";
+    status.textContent = "✓ Synced to sheet";
+  } catch {
+    status.style.color = "var(--yellow)";
+    status.textContent = "⚠ Saved locally — sync failed";
+  }
+
+  setTimeout(() => { status.style.display = "none"; }, 3000);
+}
+
+// ── Log view ──────────────────────────────────────────────────────────────────
+
+function renderLog() {
+  const sessions = state.sessions;
+  const empty   = document.getElementById("empty-log");
+  const list    = document.getElementById("session-list");
+  const strip   = document.getElementById("summary-strip");
+
+  if (sessions.length === 0) {
+    empty.style.display = "block";
+    list.innerHTML = "";
+    strip.innerHTML = "";
+    return;
+  }
+
+  empty.style.display = "none";
+
+  // Summary stats
+  const pres    = sessions.map(s => s.pre);
+  const posts   = sessions.map(s => s.post);
+  const deltas  = sessions.map(s => s.post - s.pre);
+  const avg     = arr => (arr.reduce((a,b) => a+b,0) / arr.length).toFixed(1);
+  const improved = deltas.filter(d => d > 0).length;
+
+  strip.innerHTML = [
+    { label: "Sessions", val: sessions.length },
+    { label: "Avg Pre",  val: avg(pres) },
+    { label: "Avg Post", val: avg(posts) },
+    { label: "Improved", val: `${improved}/${sessions.length}` },
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>
+  `).join("");
+
+  // Session rows (newest first)
+  list.innerHTML = [...sessions].reverse().map(s => {
+    const delta = s.post - s.pre;
+    const sign  = delta > 0 ? "+" : "";
+    const dc    = delta > 0 ? "#3fb950" : delta < 0 ? "#f85149" : "var(--subtle)";
+    const pc    = scoreColor(s.pre).main;
+    const poc   = scoreColor(s.post).main;
+    const dateStr = formatDate(s.date);
+    return `
+      <div class="session-row">
+        <div class="session-meta">
+          <div class="session-date">${dateStr}</div>
+          ${s.note ? `<div class="session-note">${escHtml(s.note)}</div>` : ""}
+        </div>
+        <div class="session-scores">
+          <span class="session-score" style="color:${pc}">${s.pre}</span>
+          <span class="session-arrow">→</span>
+          <span class="session-score" style="color:${poc}">${s.post}</span>
+          <span class="session-delta" style="color:${dc}">${sign}${delta}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ── Clear ─────────────────────────────────────────────────────────────────────
+
+function startClear() {
+  document.getElementById("clear-btn").style.display = "none";
+  document.getElementById("confirm-clear-btn").style.display = "block";
+  document.getElementById("cancel-clear-btn").style.display = "block";
+}
+
+function cancelClear() {
+  document.getElementById("clear-btn").style.display = "block";
+  document.getElementById("confirm-clear-btn").style.display = "none";
+  document.getElementById("cancel-clear-btn").style.display = "none";
+}
+
+function confirmClear() {
+  state.sessions = [];
+  persistSessions();
+  document.getElementById("tab-log").textContent = "Log (0)";
+  cancelClear();
+  renderLog();
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+
+function exportCSV() {
+  const header = "Date,Pre,Post,Change,Note,Mode\n";
+  const rows = state.sessions.map(s => {
+    const d = formatDate(s.date);
+    return `"${d}",${s.pre},${s.post},${s.post - s.pre},"${escCSV(s.note || "")}","${s.mode || "live"}"`;
+  }).join("\n");
+  const blob = new Blob([header + rows], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `calhn-mood-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Scale reference ───────────────────────────────────────────────────────────
+
+function buildScaleRef() {
+  const grid = document.getElementById("ref-grid");
+  grid.innerHTML = Object.entries(ANCHORS).map(([n, label]) => {
+    const c = scoreColor(Number(n)).main;
+    return `
+      <div class="ref-row">
+        <span class="ref-num" style="color:${c}">${n}</span>
+        <span class="ref-text">${label}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
+    + " · "
+    + d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function escCSV(s) {
+  return String(s).replace(/"/g, '""');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+function init() {
+  loadSessions();
+  buildGrid("pre-grid",  "pre");
+  buildGrid("post-grid", "post");
+  buildScaleRef();
+
+  // Set retro date default to now
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString().slice(0,16);
+  document.getElementById("retro-date").value = local;
+
+  // Update tab count
+  document.getElementById("tab-log").textContent = `Log (${state.sessions.length})`;
+}
+
+init();
+</script>
+</body>
+</html>
