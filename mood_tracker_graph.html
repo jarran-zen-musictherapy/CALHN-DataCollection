@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT Mood Tracker — Pre/Post Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            background: white;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        /* Controls */
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .export-btn {
+            background: #E67E73;
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .export-btn:hover { background: #d35f52; }
+        .refresh-btn {
+            background: white;
+            color: #E67E73;
+            border: 2px solid #E67E73;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .refresh-btn:hover { background: #E67E73; color: white; }
+
+        /* Status bar */
+        #status {
+            display: none;
+            text-align: center;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        #status.loading {
+            background: #f0f4ff;
+            color: #2c3e50;
+            border: 1px solid #c8d8ff;
+        }
+        #status.error {
+            background: #fff0f0;
+            color: #c0392b;
+            border: 1px solid #f5c6c6;
+        }
+
+        /* Summary strip */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid #E67E73;
+        }
+        .summary-card h3 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1;
+        }
+        .summary-card .subtext {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        .value.positive { color: #27ae60; }
+        .value.negative { color: #e74c3c; }
+
+        /* Chart sections */
+        .chart-section {
+            margin-bottom: 40px;
+        }
+        .chart-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+        .chart-container.short {
+            height: 340px;
+        }
+
+        /* Legend note */
+        .legend-note {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 13px;
+            font-style: italic;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        /* Hidden state for charts section */
+        #charts-area { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Music Therapy — Observed Mood Tracker</h1>
+    <p class="subtitle">Pre / Post Session Analysis</p>
+
+    <div id="controls">
+        <button class="refresh-btn" id="refreshBtn">&#8635; Refresh</button>
+        <button class="export-btn" id="exportBtn">Export PNG</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="charts-area">
+        <!-- Summary stats strip -->
+        <div class="summary" id="statsStrip">
+            <div class="summary-card">
+                <h3>Total Sessions</h3>
+                <div class="value" id="statTotal">—</div>
+                <div class="subtext">sessions logged</div>
+            </div>
+            <div class="summary-card">
+                <h3>Mean Pre Score</h3>
+                <div class="value" id="statMeanPre">—</div>
+                <div class="subtext">out of 10</div>
+            </div>
+            <div class="summary-card">
+                <h3>Mean Post Score</h3>
+                <div class="value" id="statMeanPost">—</div>
+                <div class="subtext">out of 10</div>
+            </div>
+            <div class="summary-card">
+                <h3>Mean Change</h3>
+                <div class="value" id="statMeanChange">—</div>
+                <div class="subtext">mood shift per session</div>
+            </div>
+            <div class="summary-card">
+                <h3>Positive Sessions</h3>
+                <div class="value" id="statPctPositive">—</div>
+                <div class="subtext">sessions with mood lift</div>
+            </div>
+        </div>
+
+        <!-- Chart 1: Mean Pre vs Post -->
+        <div class="chart-section">
+            <div class="chart-title">Average Observed Mood — Pre vs Post</div>
+            <div class="chart-container short">
+                <canvas id="chart1"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Delta over time -->
+        <div class="chart-section">
+            <div class="chart-title">Mood Change per Session Over Time</div>
+            <div class="chart-container">
+                <canvas id="chart2"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 3: Score distribution -->
+        <div class="chart-section">
+            <div class="chart-title">Score Distribution — Pre vs Post</div>
+            <div class="chart-container">
+                <canvas id="chart3"></canvas>
+            </div>
+        </div>
+
+        <p class="legend-note">
+            Data sourced from MT Observed Mood Tracker (Google Sheets). Each session represents a single patient encounter.
+        </p>
+    </div>
+</div>
+
+<script>
+    // ── CONFIG ──────────────────────────────────────────────────────────────
+    const SHEET_CSV_URL = ""; // Jarran will paste the published CSV URL here
+
+    // ── STATE ───────────────────────────────────────────────────────────────
+    let charts = {};
+
+    // ── CHART.JS DEFAULTS ───────────────────────────────────────────────────
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    Chart.defaults.color = '#7f8c8d';
+    Chart.defaults.borderColor = 'rgba(0,0,0,0.05)';
+
+    // ── UTILS ────────────────────────────────────────────────────────────────
+    function avg(arr) {
+        if (!arr.length) return 0;
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+
+    function showStatus(type, msg) {
+        const el = document.getElementById('status');
+        el.className = type;
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function hideStatus() {
+        const el = document.getElementById('status');
+        el.style.display = 'none';
+    }
+
+    function destroyCharts() {
+        Object.values(charts).forEach(c => c.destroy());
+        charts = {};
+    }
+
+    // ── CSV PARSING ──────────────────────────────────────────────────────────
+    function splitCSVLine(line) {
+        const result = [];
+        let cur = '', inQ = false;
+        for (const ch of line) {
+            if (ch === '"') {
+                inQ = !inQ;
+            } else if (ch === ',' && !inQ) {
+                result.push(cur);
+                cur = '';
+            } else {
+                cur += ch;
+            }
+        }
+        result.push(cur);
+        return result;
+    }
+
+    function parseDate(str) {
+        if (!str) return null;
+        str = str.trim();
+        // Try yyyy-mm-dd
+        if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+            const d = new Date(str);
+            return isNaN(d) ? null : d;
+        }
+        // Try dd/mm/yyyy
+        const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (m) {
+            const d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+            return isNaN(d) ? null : d;
+        }
+        // Try mm/dd/yyyy as fallback
+        const d = new Date(str);
+        return isNaN(d) ? null : d;
+    }
+
+    function parseCSV(text) {
+        const lines = text.trim().split('\n');
+        lines.shift(); // skip header row
+        return lines.map(line => {
+            if (!line.trim()) return null;
+            const cols = splitCSVLine(line);
+            const pre = parseFloat(cols[2]);
+            const post = parseFloat(cols[3]);
+            if (isNaN(pre) || isNaN(post)) return null;
+            const change = parseFloat(cols[4]);
+            const dateObj = parseDate(cols[1]);
+            return {
+                dateStr: cols[1]?.trim() || '',
+                dateObj,
+                pre,
+                post,
+                change: isNaN(change) ? post - pre : change,
+            };
+        }).filter(Boolean);
+    }
+
+    // ── STATS ────────────────────────────────────────────────────────────────
+    function renderStats(rows) {
+        const pres = rows.map(r => r.pre);
+        const posts = rows.map(r => r.post);
+        const changes = rows.map(r => r.change);
+        const pctPositive = Math.round(rows.filter(r => r.change > 0).length / rows.length * 100);
+
+        document.getElementById('statTotal').textContent = rows.length;
+        document.getElementById('statMeanPre').textContent = avg(pres).toFixed(1);
+        document.getElementById('statMeanPost').textContent = avg(posts).toFixed(1);
+
+        const meanChange = avg(changes);
+        const changeEl = document.getElementById('statMeanChange');
+        changeEl.textContent = (meanChange >= 0 ? '+' : '') + meanChange.toFixed(1);
+        changeEl.className = 'value ' + (meanChange >= 0 ? 'positive' : 'negative');
+
+        document.getElementById('statPctPositive').textContent = pctPositive + '%';
+    }
+
+    // ── CHARTS ───────────────────────────────────────────────────────────────
+    const TOOLTIP_OPTS = {
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        padding: 12,
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 },
+    };
+
+    function renderChart1(rows) {
+        const meanPre = avg(rows.map(r => r.pre));
+        const meanPost = avg(rows.map(r => r.post));
+
+        charts.chart1 = new Chart(document.getElementById('chart1'), {
+            type: 'bar',
+            data: {
+                labels: ['Pre', 'Post'],
+                datasets: [{
+                    label: 'Average Mood Score',
+                    data: [meanPre, meanPost],
+                    backgroundColor: [
+                        'rgba(74, 155, 199, 0.8)',
+                        'rgba(63, 185, 80, 0.8)',
+                    ],
+                    borderColor: [
+                        '#4A9BC7',
+                        '#3fb950',
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...TOOLTIP_OPTS,
+                        callbacks: {
+                            label: ctx => ` Score: ${ctx.parsed.y.toFixed(2)} / 10`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 14, weight: 'bold' } },
+                    },
+                    y: {
+                        min: 0,
+                        max: 10,
+                        title: {
+                            display: true,
+                            text: 'Mood Score (1–10)',
+                            font: { size: 13, weight: 'bold' },
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { stepSize: 1 },
+                    },
+                },
+            },
+        });
+    }
+
+    function renderChart2(rows) {
+        // Sort by date ascending, fallback to row order
+        const sorted = [...rows].sort((a, b) => {
+            if (a.dateObj && b.dateObj) return a.dateObj - b.dateObj;
+            return 0;
+        });
+        const labels = sorted.map(r => r.dateStr);
+        const data = sorted.map(r => r.change);
+
+        charts.chart2 = new Chart(document.getElementById('chart2'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Mood Change',
+                    data,
+                    borderColor: '#E67E73',
+                    backgroundColor: 'rgba(230, 126, 115, 0.12)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: 'origin',
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#E67E73',
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...TOOLTIP_OPTS,
+                        callbacks: {
+                            label: ctx => ` Change: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(1)}`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Session Date',
+                            font: { size: 13, weight: 'bold' },
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            autoSkip: true,
+                            maxTicksLimit: 16,
+                        },
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Mood Change',
+                            font: { size: 13, weight: 'bold' },
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: v => (v >= 0 ? '+' : '') + v,
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    function renderChart3(rows) {
+        const scores = [1,2,3,4,5,6,7,8,9,10];
+        const preCounts = scores.map(s => rows.filter(r => Math.round(r.pre) === s).length);
+        const postCounts = scores.map(s => rows.filter(r => Math.round(r.post) === s).length);
+
+        charts.chart3 = new Chart(document.getElementById('chart3'), {
+            type: 'bar',
+            data: {
+                labels: scores.map(String),
+                datasets: [
+                    {
+                        label: 'Pre',
+                        data: preCounts,
+                        backgroundColor: 'rgba(74, 155, 199, 0.75)',
+                        borderColor: '#4A9BC7',
+                        borderWidth: 1.5,
+                    },
+                    {
+                        label: 'Post',
+                        data: postCounts,
+                        backgroundColor: 'rgba(63, 185, 80, 0.75)',
+                        borderColor: '#3fb950',
+                        borderWidth: 1.5,
+                    },
+                ],
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { size: 13 }, padding: 15 },
+                    },
+                    tooltip: {
+                        ...TOOLTIP_OPTS,
+                        callbacks: {
+                            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x} session${ctx.parsed.x !== 1 ? 's' : ''}`,
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Score',
+                            font: { size: 13, weight: 'bold' },
+                        },
+                        grid: { display: false },
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Number of Sessions',
+                            font: { size: 13, weight: 'bold' },
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            stepSize: 1,
+                            callback: v => Number.isInteger(v) ? v : '',
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    function renderCharts(rows) {
+        document.getElementById('charts-area').style.display = 'block';
+        renderChart1(rows);
+        renderChart2(rows);
+        renderChart3(rows);
+    }
+
+    // ── FETCH & RENDER ────────────────────────────────────────────────────────
+    async function fetchAndRender() {
+        destroyCharts();
+        document.getElementById('charts-area').style.display = 'none';
+        showStatus('loading', 'Loading data from Google Sheets…');
+
+        if (!SHEET_CSV_URL) {
+            showStatus('error',
+                'CSV URL not configured. Paste the published Google Sheet CSV URL into SHEET_CSV_URL at the top of the script.');
+            return;
+        }
+
+        try {
+            const res = await fetch(SHEET_CSV_URL);
+            if (!res.ok) throw new Error(`HTTP ${res.status} — check that the sheet is published publicly.`);
+            const text = await res.text();
+            const rows = parseCSV(text);
+            if (rows.length === 0) {
+                throw new Error('No valid data rows found. Check that the CSV has the expected columns: Timestamp, Date, Pre, Post, Change, Note, Mode.');
+            }
+            hideStatus();
+            renderStats(rows);
+            renderCharts(rows);
+        } catch (e) {
+            showStatus('error', 'Failed to load data: ' + e.message);
+        }
+    }
+
+    // ── EXPORT ────────────────────────────────────────────────────────────────
+    function exportToPNG() {
+        const controls = document.getElementById('controls');
+        const statusEl = document.getElementById('status');
+        const statusWasVisible = statusEl.style.display !== 'none';
+
+        controls.style.display = 'none';
+        statusEl.style.display = 'none';
+
+        html2canvas(document.querySelector('.container'), {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false,
+        }).then(canvas => {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const today = new Date().toISOString().slice(0, 10);
+                link.download = `MT_Mood_Pre_Post_${today}.png`;
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+                controls.style.display = 'flex';
+                if (statusWasVisible) statusEl.style.display = 'block';
+            });
+        }).catch(err => {
+            controls.style.display = 'flex';
+            if (statusWasVisible) statusEl.style.display = 'block';
+            alert('Export failed. Please try again.');
+            console.error('Export failed:', err);
+        });
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('refreshBtn').addEventListener('click', fetchAndRender);
+        document.getElementById('exportBtn').addEventListener('click', exportToPNG);
+        fetchAndRender();
+    });
+</script>
+</body>
+</html>
