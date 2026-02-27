@@ -236,6 +236,25 @@
             padding-top: 12px;
             border-top: 1px solid #eee;
         }
+        .data-status {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .data-status.error { color: #e74c3c; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(91,160,138,0.2);
+            border-top-color: #5BA08A;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -253,9 +272,11 @@
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">&#128202; Export as PNG</button>
                 <button class="filter-btn" onclick="openDateRangeModal()">&#128197; Date Range</button>
+                <button class="filter-btn" onclick="fetchAndRender()">&#8635; Refresh</button>
             </div>
         </div>
 
+        <div id="dataStatus" class="data-status" style="display:none;"></div>
         <div class="chart-container">
             <canvas id="oosChart"></canvas>
         </div>
@@ -375,27 +396,18 @@
     </div>
 
     <script>
+        const SHEET_CSV_URL = ""; // paste published CSV URL here
+
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const MONTH_IDX = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 
-        // 2024 – Jul–Nov only; total OoS only (no New/Review breakdown)
-        const data2024Total  = [null, null, null, null, null, null, 36, 5, 10, 14, 7, null];
-
-        // 2025 – Jan–Jun: total only (no real breakdown); Jul–Dec: actual New/Review
-        const data2025New    = [null, null, null, null, null, null, 3, 3, 14, 11, 2, 13];
-        const data2025Review = [null, null, null, null, null, null, 21, 26, 25, 26, 3, 24];
-        const data2025Total  = [7, 3, 27, 18, 13, 15, 24, 29, 39, 37, 5, 37];
-
-        // 2026 – January only; total OoS only (no real New/Review breakdown)
-        const data2026Total  = [39, null, null, null, null, null, null, null, null, null, null, null];
-
-        // Annual totals for "All Time" chart – all shown as total-only
-        const annualAT = {
-            labels:  ['2024',         '2025',       '2026'],
-            new:     [null,            null,          null],
-            review:  [null,            null,          null],
-            total:   [72,              254,           39],
-            subtext: ['Jul–Nov only',  'Full year',   'January YTD']
-        };
+        // Data — populated by fetchAndRender()
+        let data2024Total  = Array(12).fill(null);
+        let data2025New    = Array(12).fill(null);
+        let data2025Review = Array(12).fill(null);
+        let data2025Total  = Array(12).fill(null);
+        let data2026Total  = Array(12).fill(null);
+        let annualAT = { labels: ['2024','2025','2026'], new: [null,null,null], review: [null,null,null], total: [0,0,0], subtext: ['','',''] };
 
         let chart;
         let currentPeriod = 'all';
@@ -680,7 +692,8 @@
                 const total = data2024Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
                 noBreakdown('2024 Total', total, 'Jul–Nov only');
             } else if (period === '2026') {
-                noBreakdown('2026 Total', 39, 'January only');
+                const t = data2026Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                noBreakdown('2026 Total', t, monthRangeLabel(data2026Total));
             } else if (period === 'all') {
                 const total = annualAT.total.reduce((s, v) => s + v, 0);
                 noBreakdown('All Time Total', total, '2024 + 2025 + 2026 YTD');
@@ -717,13 +730,122 @@
             updateSummary(period);
         }
 
+        // ─── CSV fetch + parse ───────────────────────────────────────────────
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const cols = lines[i].split(',');
+                const row = {};
+                headers.forEach((h, idx) => { row[h] = (cols[idx] || '').trim().replace(/^"|"$/g, ''); });
+                rows.push(row);
+            }
+            return rows;
+        }
+
+        function buildYearData(rows) {
+            const byYear = {};
+            for (const row of rows) {
+                const year = parseInt(row['Year']);
+                const mIdx = MONTH_IDX[row['Month']];
+                if (isNaN(year) || mIdx === undefined) continue;
+                if (!byYear[year]) {
+                    byYear[year] = { new: Array(12).fill(null), review: Array(12).fill(null), total: Array(12).fill(null) };
+                }
+                const nv = row['New']    !== '' ? parseInt(row['New'])    : null;
+                const rv = row['Review'] !== '' ? parseInt(row['Review']) : null;
+                const tv = row['Total']  !== '' ? parseInt(row['Total'])  : null;
+                byYear[year].new[mIdx]    = (nv !== null && !isNaN(nv)) ? nv : null;
+                byYear[year].review[mIdx] = (rv !== null && !isNaN(rv)) ? rv : null;
+                byYear[year].total[mIdx]  = (tv !== null && !isNaN(tv)) ? tv : null;
+            }
+            return byYear;
+        }
+
+        function monthRangeLabel(arr) {
+            const idx = arr.map((v, i) => v !== null ? i : -1).filter(i => i >= 0);
+            if (!idx.length) return 'No data';
+            if (idx[0] === 0 && idx[idx.length - 1] === 11) return 'Full year';
+            if (idx.length === 1) return months[idx[0]] + ' only';
+            return months[idx[0]] + '\u2013' + months[idx[idx.length - 1]];
+        }
+
+        function showLoading() {
+            const el = document.getElementById('dataStatus');
+            el.className = 'data-status';
+            el.innerHTML = '<span class="spinner"></span>Loading data\u2026';
+            el.style.display = 'block';
+            document.getElementById('oosChart').style.display = 'none';
+        }
+
+        function showDataMessage(msg, isError) {
+            const el = document.getElementById('dataStatus');
+            el.className = 'data-status' + (isError ? ' error' : '');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('oosChart').style.display = 'none';
+        }
+
+        function hideDataMessage() {
+            document.getElementById('dataStatus').style.display = 'none';
+            document.getElementById('oosChart').style.display = '';
+        }
+
+        async function fetchAndRender() {
+            if (!SHEET_CSV_URL) {
+                showDataMessage('No data source configured \u2014 add SHEET_CSV_URL to activate');
+                return;
+            }
+            showLoading();
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const text = await response.text();
+                const rows = parseCSV(text);
+                const byYear = buildYearData(rows);
+
+                const sumNN   = arr => arr.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const getYear = y => byYear[y] || { new: Array(12).fill(null), review: Array(12).fill(null), total: Array(12).fill(null) };
+                const fillTot = (n, r, t) => t.map((v, i) => v !== null ? v : (n[i] !== null && r[i] !== null ? n[i] + r[i] : null));
+
+                const y24 = getYear(2024);
+                const y25 = getYear(2025);
+                const y26 = getYear(2026);
+
+                data2024Total  = y24.total;
+                data2025New    = y25.new;
+                data2025Review = y25.review;
+                data2025Total  = fillTot(y25.new, y25.review, y25.total);
+                data2026Total  = y26.total;
+
+                allData = {
+                    2024: { new: null,        review: null,           total: data2024Total },
+                    2025: { new: data2025New, review: data2025Review, total: data2025Total },
+                    2026: { new: null,        review: null,           total: data2026Total }
+                };
+
+                // Art Therapy annual chart is always total-only (new/review = null)
+                annualAT = {
+                    labels:  ['2024', '2025', '2026'],
+                    new:     [null, null, null],
+                    review:  [null, null, null],
+                    total:   [sumNN(data2024Total), sumNN(data2025Total), sumNN(data2026Total)],
+                    subtext: [monthRangeLabel(data2024Total), monthRangeLabel(data2025Total), monthRangeLabel(data2026Total)]
+                };
+
+                hideDataMessage();
+                createChart(currentPeriod);
+                updateSummary(currentPeriod);
+            } catch (err) {
+                showDataMessage('Unable to load data \u2014 check your connection or sheet permissions', true);
+                console.error('fetchAndRender error:', err);
+            }
+        }
+
         // ─── Date Range Modal ────────────────────────────────────────────────
-        // 2024 and 2026 have total only; 2025 has new/review for Jul–Dec only
-        const allData = {
-            2024: { new: null,         review: null,          total: data2024Total },
-            2025: { new: data2025New,  review: data2025Review, total: data2025Total },
-            2026: { new: null,         review: null,          total: data2026Total }
-        };
+        let allData = {}; // populated by fetchAndRender()
 
         let modalChartInstance = null;
 
@@ -922,9 +1044,8 @@
             });
         }
 
-        // Initialise with All Time view
-        createChart('all');
-        updateSummary('all');
+        // Initialise — load data from Google Sheet
+        fetchAndRender();
 
         function exportToPNG() {
             const controls   = document.getElementById('controls');
