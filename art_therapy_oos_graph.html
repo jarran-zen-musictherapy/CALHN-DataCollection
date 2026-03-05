@@ -396,7 +396,7 @@
     </div>
 
     <script>
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-https://docs.google.com/spreadsheets/d/e/2PACX-1vQlGxzDvnPkzMgsphdd0waDdXF8pT3YrA40PzdMNUJ23cGclPy2T0Id1dU9oTuZo98N_ny_lSm0EDcI/pub?gid=1197599652&single=true&output=csv/pub?gid=1197599652&single=true&output=csv"; // paste published CSV URL here
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlGxzDvnPkzMgsphdd0waDdXF8pT3YrA40PzdMNUJ23cGclPy2T0Id1dU9oTuZo98N_ny_lSm0EDcI/pub?gid=1197599652&single=true&output=csv"; // paste published CSV URL here
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const MONTH_IDX = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -406,6 +406,8 @@
         let data2025New    = Array(12).fill(null);
         let data2025Review = Array(12).fill(null);
         let data2025Total  = Array(12).fill(null);
+        let data2026New    = Array(12).fill(null);
+        let data2026Review = Array(12).fill(null);
         let data2026Total  = Array(12).fill(null);
         let annualAT = { labels: ['2024','2025','2026'], new: [null,null,null], review: [null,null,null], total: [0,0,0], subtext: ['','',''] };
 
@@ -540,22 +542,52 @@
                 return;
             }
 
-            // ── 2026: line chart showing monthly totals only ─────────────────
+            // ── 2026: stacked area (Jan–present real N/R) + total line ──────
             if (period === '2026') {
-                legendNote.textContent = 'Total OoS per month (New/Review breakdown not available for 2026)';
+                legendNote.textContent = 'Teal line = Total OoS | Stacked areas show New/Review composition';
+                const newStacked26 = data2026New.map((val, i) =>
+                    val !== null && data2026Review[i] !== null ? val + data2026Review[i] : null
+                );
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: months,
-                        datasets: [{
-                            label: '2026 Total OoS',
-                            data: data2026Total,
-                            backgroundColor: 'rgba(91, 160, 138, 0.75)',
-                            borderColor: '#5BA08A',
-                            borderWidth: 1.5,
-                            pointRadius: 5,
-                            pointHoverRadius: 8
-                        }]
+                        datasets: [
+                            {
+                                label: '2026 Review',
+                                data: data2026Review,
+                                borderColor: '#E67E73',
+                                backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: 'origin',
+                                pointRadius: 5,
+                                pointHoverRadius: 8
+                            },
+                            {
+                                label: '2026 New',
+                                data: newStacked26,
+                                borderColor: '#4A9BC7',
+                                backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: '-1',
+                                pointRadius: 5,
+                                pointHoverRadius: 8
+                            },
+                            {
+                                label: '2026 Total',
+                                data: data2026Total,
+                                borderColor: '#5BA08A',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2.5,
+                                tension: 0.4,
+                                fill: false,
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                                borderDash: [5, 5]
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
@@ -568,7 +600,12 @@
                                 callbacks: {
                                     label: function(context) {
                                         if (context.parsed.y === null) return null;
-                                        return '2026 Total: ' + context.parsed.y.toLocaleString() + ' OoS';
+                                        if (context.dataset.label.includes('New')) {
+                                            const actualNew = data2026New[context.dataIndex];
+                                            if (actualNew === null) return null;
+                                            return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
+                                        }
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                     }
                                 }
                             }
@@ -576,7 +613,8 @@
                         scales: {
                             y: { beginAtZero: true, title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
                             x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
-                        }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
                 return;
@@ -692,8 +730,25 @@
                 const total = data2024Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
                 noBreakdown('2024 Total', total, 'Jul–Nov only');
             } else if (period === '2026') {
-                const t = data2026Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
-                noBreakdown('2026 Total', t, monthRangeLabel(data2026Total));
+                const totalNew    = data2026New.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const totalReview = data2026Review.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const t           = data2026Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const breakdownTotal = totalNew + totalReview;
+                const newPct      = breakdownTotal > 0 ? Math.round((totalNew    / breakdownTotal) * 100) : 0;
+                const reviewPct   = breakdownTotal > 0 ? Math.round((totalReview / breakdownTotal) * 100) : 0;
+
+                document.getElementById('totalLabel').textContent    = '2026 Total';
+                document.getElementById('totalValue').textContent    = t.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = monthRangeLabel(data2026Total);
+
+                document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                document.getElementById('newSubtext').textContent    = newPct + '% of total';
+
+                document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                document.getElementById('reviewSubtext').textContent = reviewPct + '% of total';
+
+                document.getElementById('newRatio').textContent    = newPct + '% New';
+                document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
             } else if (period === 'all') {
                 const total = annualAT.total.reduce((s, v) => s + v, 0);
                 noBreakdown('All Time Total', total, '2024 + 2025 + 2026 YTD');
@@ -749,7 +804,9 @@
             const byYear = {};
             for (const row of rows) {
                 const year = parseInt(row['Year']);
-                const mIdx = MONTH_IDX[row['Month']];
+                const rawMonth = (row['Month'] || '');
+                const normMonth = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
+                const mIdx = MONTH_IDX[normMonth];
                 if (isNaN(year) || mIdx === undefined) continue;
                 if (!byYear[year]) {
                     byYear[year] = { new: Array(12).fill(null), review: Array(12).fill(null), total: Array(12).fill(null) };
@@ -800,7 +857,7 @@
             }
             showLoading();
             try {
-                const response = await fetch(SHEET_CSV_URL);
+                const response = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const text = await response.text();
                 const rows = parseCSV(text);
@@ -818,12 +875,14 @@
                 data2025New    = y25.new;
                 data2025Review = y25.review;
                 data2025Total  = fillTot(y25.new, y25.review, y25.total);
-                data2026Total  = y26.total;
+                data2026New    = y26.new;
+                data2026Review = y26.review;
+                data2026Total  = fillTot(y26.new, y26.review, y26.total);
 
                 allData = {
                     2024: { new: null,        review: null,           total: data2024Total },
                     2025: { new: data2025New, review: data2025Review, total: data2025Total },
-                    2026: { new: null,        review: null,           total: data2026Total }
+                    2026: { new: data2026New, review: data2026Review, total: data2026Total }
                 };
 
                 // Art Therapy annual chart is always total-only (new/review = null)
