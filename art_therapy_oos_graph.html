@@ -749,7 +749,9 @@
             const byYear = {};
             for (const row of rows) {
                 const year = parseInt(row['Year']);
-                const mIdx = MONTH_IDX[row['Month']];
+                const rawMonth = (row['Month'] || '');
+                const normMonth = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
+                const mIdx = MONTH_IDX[normMonth];
                 if (isNaN(year) || mIdx === undefined) continue;
                 if (!byYear[year]) {
                     byYear[year] = { new: Array(12).fill(null), review: Array(12).fill(null), total: Array(12).fill(null) };
