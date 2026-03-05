@@ -713,7 +713,7 @@
             }
             showLoading();
             try {
-                const response = await fetch(SHEET_CSV_URL);
+                const response = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const text = await response.text();
                 const rows = parseCSV(text);
