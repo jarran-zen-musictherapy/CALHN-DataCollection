@@ -586,9 +586,6 @@
             // ── 2026: stacked area (Jan–present real N/R) + total line ──────
             if (period === '2026') {
                 legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
-                const reviewStacked26 = data2026Review.map((val, i) =>
-                    val !== null && data2026New[i] !== null ? val + data2026New[i] : null
-                );
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -607,7 +604,7 @@
                             },
                             {
                                 label: '2026 Review',
-                                data: reviewStacked26,
+                                data: data2026Review,
                                 borderColor: '#E67E73',
                                 backgroundColor: 'rgba(230, 126, 115, 0.5)',
                                 borderWidth: 2,
@@ -666,7 +663,6 @@
                 legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
                 const { labels, newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
                 const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
-                const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
                 const datasets = [];
                 if (hasBreakdown) {
                     datasets.push({
@@ -675,7 +671,7 @@
                         borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 7
                     });
                     datasets.push({
-                        label: 'Review', data: reviewStacked,
+                        label: 'Review', data: reviewVals,
                         borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                         borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 4, pointHoverRadius: 7
                     });
@@ -732,10 +728,6 @@
             // ── 2025: stacked area (Jul–Dec real N/R) + total line (all months) ──
             legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle), Jul–Dec only';
 
-            const reviewStacked25 = data2025Review.map((val, i) =>
-                val !== null && data2025New[i] !== null ? val + data2025New[i] : null
-            );
-
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -754,7 +746,7 @@
                         },
                         {
                             label: '2025 Review',
-                            data: reviewStacked25,
+                            data: data2025Review,
                             borderColor: '#E67E73',
                             backgroundColor: 'rgba(230, 126, 115, 0.5)',
                             borderWidth: 2,
@@ -1094,7 +1086,6 @@
             const ctx = document.getElementById('modalChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
 
-            const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
             const datasets = [];
             if (hasBreakdown) {
                 datasets.push({
@@ -1103,7 +1094,7 @@
                     borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 3, pointHoverRadius: 6
                 });
                 datasets.push({
-                    label: 'Review', data: reviewStacked,
+                    label: 'Review', data: reviewVals,
                     borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 3, pointHoverRadius: 6
                 });
@@ -1242,7 +1233,10 @@
         fetchAndRender();
 
         function getPeriodDisplayLabel() {
-            if (THRF_RANGES[currentPeriod]) return THRF_RANGES[currentPeriod].label;
+            if (THRF_RANGES[currentPeriod]) {
+                const num = currentPeriod.replace('thrf', '');
+                return 'Reporting Period #' + num;
+            }
             if (currentPeriod === 'all') return 'All Time';
             return currentPeriod;
         }

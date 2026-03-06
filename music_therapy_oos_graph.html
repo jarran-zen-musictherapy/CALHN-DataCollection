@@ -596,7 +596,6 @@
                 legendNote.textContent = 'Purple line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
                 const { labels, newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
                 const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
-                const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
                 const datasets = [];
                 if (hasBreakdown) {
                     datasets.push({
@@ -605,7 +604,7 @@
                         borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 7
                     });
                     datasets.push({
-                        label: 'Review', data: reviewStacked,
+                        label: 'Review', data: reviewVals,
                         borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                         borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 4, pointHoverRadius: 7
                     });
@@ -673,10 +672,6 @@
             const ptRadius  = isSparse ? 5 : 3;
             const ptHover   = isSparse ? 8 : 6;
 
-            const reviewStacked = reviewData.map((val, i) =>
-                val !== null && newData[i] !== null ? val + newData[i] : null
-            );
-
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -695,7 +690,7 @@
                         },
                         {
                             label: period + ' Review',
-                            data: reviewStacked,
+                            data: reviewData,
                             borderColor: '#E67E73',
                             backgroundColor: 'rgba(230, 126, 115, 0.5)',
                             borderWidth: 2,
@@ -1044,7 +1039,6 @@
             const ctx = document.getElementById('modalChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
 
-            const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
             const datasets = [];
             if (hasBreakdown) {
                 datasets.push({
@@ -1053,7 +1047,7 @@
                     borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 3, pointHoverRadius: 6
                 });
                 datasets.push({
-                    label: 'Review', data: reviewStacked,
+                    label: 'Review', data: reviewVals,
                     borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 3, pointHoverRadius: 6
                 });
@@ -1192,7 +1186,10 @@
         fetchAndRender();
 
         function getPeriodDisplayLabel() {
-            if (THRF_RANGES[currentPeriod]) return THRF_RANGES[currentPeriod].label;
+            if (THRF_RANGES[currentPeriod]) {
+                const num = currentPeriod.replace('thrf', '');
+                return 'Reporting Period #' + num;
+            }
             if (currentPeriod === 'all') return 'All Time';
             return currentPeriod;
         }
