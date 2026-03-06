@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Therapy - New vs Review Sessions</title>
+    <title>Art Therapy - New vs Review Sessions</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -33,32 +34,50 @@
         }
         .time-selector {
             display: flex;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 30px;
         }
+        .time-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .time-btn {
-            padding: 10px 24px;
-            border: 2px solid #9B6B9E;
+            padding: 8px 20px;
+            border: 2px solid #5BA08A;
             background: white;
-            color: #9B6B9E;
+            color: #5BA08A;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
+            line-height: 1.3;
+            text-align: center;
             transition: all 0.2s;
         }
+        .time-btn small {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            opacity: 0.85;
+        }
         .time-btn:hover {
-            background: rgba(155, 107, 158, 0.1);
+            background: rgba(91, 160, 138, 0.1);
         }
         .time-btn.active {
-            background: #9B6B9E;
+            background: #5BA08A;
             color: white;
+        }
+        @media (max-width: 480px) {
+            .time-btn { font-size: 13px; padding: 7px 14px; }
         }
         .export-btn {
             padding: 10px 24px;
-            border: 2px solid #4A9BC7;
-            background: #4A9BC7;
+            border: 2px solid #9B6B9E;
+            background: #9B6B9E;
             color: white;
             border-radius: 6px;
             cursor: pointer;
@@ -67,8 +86,8 @@
             transition: all 0.2s;
         }
         .export-btn:hover {
-            background: #3a7fa0;
-            border-color: #3a7fa0;
+            background: #7a5480;
+            border-color: #7a5480;
         }
         .chart-container {
             position: relative;
@@ -85,7 +104,7 @@
             background: #f8f9fa;
             padding: 20px;
             border-radius: 6px;
-            border-left: 4px solid #9B6B9E;
+            border-left: 4px solid #5BA08A;
         }
         .summary-card h3 {
             margin: 0 0 10px 0;
@@ -97,7 +116,7 @@
         .summary-card .value {
             font-size: 28px;
             font-weight: bold;
-            color: #9B6B9E;
+            color: #5BA08A;
         }
         .summary-card .subtext {
             font-size: 12px;
@@ -133,12 +152,18 @@
             margin-top: 15px;
             font-style: italic;
         }
+        .estimate-note {
+            text-align: center;
+            font-size: 12px;
+            color: #e67e22;
+            margin-top: 6px;
+        }
         /* ─── Date Range Modal ─────────────────────────────────── */
         .filter-btn {
             padding: 10px 24px;
-            border: 2px solid #9B6B9E;
+            border: 2px solid #5BA08A;
             background: white;
-            color: #9B6B9E;
+            color: #5BA08A;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
@@ -146,7 +171,7 @@
             transition: all 0.2s;
             margin-left: 10px;
         }
-        .filter-btn:hover { background: rgba(155, 107, 158, 0.1); }
+        .filter-btn:hover { background: rgba(91, 160, 138, 0.1); }
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -207,7 +232,7 @@
             padding: 7px 20px;
             border-radius: 6px;
             border: none;
-            background: #9B6B9E;
+            background: #5BA08A;
             color: white;
             font-size: 13px;
             font-weight: 600;
@@ -242,8 +267,8 @@
             display: inline-block;
             width: 18px;
             height: 18px;
-            border: 2px solid rgba(155,107,158,0.2);
-            border-top-color: #9B6B9E;
+            border: 2px solid rgba(91,160,138,0.2);
+            border-top-color: #5BA08A;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             vertical-align: middle;
@@ -253,19 +278,32 @@
 </head>
 <body>
     <div class="container">
-        <h1>Music Therapy - Occasions of Service</h1>
+        <h1>Art Therapy - Occasions of Service</h1>
+        <div id="exportTitleOverlay" style="display:none; text-align:center; padding: 4px 0 10px;">
+            <div style="font-size:13px; color:#555; font-weight:500;" id="exportPeriodLabel"></div>
+            <div style="font-size:11px; color:#999;" id="exportDateLabel"></div>
+        </div>
         <p class="subtitle">New vs Review Sessions</p>
-        
+
         <div class="controls" id="controls">
             <div class="time-selector">
-                <button class="time-btn" onclick="setTimePeriod('2024', event)">2024</button>
-                <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
-                <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
-                <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
+                <div class="time-group">
+                    <button class="time-btn" onclick="setTimePeriod('2024', event)">2024</button>
+                    <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
+                    <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
+                    <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
+                </div>
+                <div class="time-group">
+                    <button class="time-btn" onclick="setTimePeriod('thrf1', event)">THRF 1<small>Sep 25–Feb 26</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf2', event)">THRF 2<small>Mar–Aug 26</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf3', event)">THRF 3<small>Sep 26–Feb 27</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf4', event)">THRF 4<small>Mar–Aug 27</small></button>
+                </div>
             </div>
             <div style="text-align: center; margin-top: 15px;">
-                <button class="export-btn" onclick="exportToPNG()">📊 Export as PNG</button>
-                <button class="filter-btn" onclick="openDateRangeModal()">📅 Date Range</button>
+                <button class="export-btn" onclick="exportToPNG()">&#128202; Export PNG</button>
+                <button class="export-btn" onclick="exportToPDF()" style="background:#c0392b;">&#128462; Export PDF</button>
+                <button class="filter-btn" onclick="openDateRangeModal()">&#128197; Date Range</button>
                 <button class="filter-btn" onclick="fetchAndRender()">&#8635; Refresh</button>
             </div>
         </div>
@@ -276,25 +314,25 @@
         </div>
 
         <div class="summary">
-            <!-- Total -->
-            <div class="summary-card">
-                <h3 id="totalLabel">Total</h3>
-                <div class="value" id="totalValue">-</div>
-                <div class="subtext" id="totalSubtext">-</div>
-            </div>
-            
             <!-- New -->
             <div class="summary-card">
                 <h3>New Sessions</h3>
                 <div class="value" id="newValue">-</div>
                 <div class="subtext" id="newSubtext">-</div>
             </div>
-            
+
             <!-- Review -->
             <div class="summary-card">
                 <h3>Review Sessions</h3>
                 <div class="value" id="reviewValue">-</div>
                 <div class="subtext" id="reviewSubtext">-</div>
+            </div>
+
+            <!-- Total -->
+            <div class="summary-card">
+                <h3 id="totalLabel">Range Total</h3>
+                <div class="value" id="totalValue">-</div>
+                <div class="subtext" id="totalSubtext">-</div>
             </div>
 
             <!-- Ratio Display -->
@@ -308,6 +346,7 @@
         </div>
 
         <p class="legend-note" id="legendNote">Stacked bars show annual New + Review composition</p>
+       
     </div>
 
     <!-- Date Range Modal -->
@@ -326,7 +365,7 @@
                     <select id="modalStartMonth">
                         <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
                         <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
-                        <option value="6">Jul</option><option value="7" selected>Aug</option><option value="8">Sep</option>
+                        <option value="6" selected>Jul</option><option value="7">Aug</option><option value="8">Sep</option>
                         <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
                     </select>
                     <select id="modalStartYear">
@@ -383,13 +422,14 @@
             </div>
             <p class="modal-summary-text" id="modalSummaryText"></p>
             <div class="modal-footer">
-                <button class="export-btn" onclick="exportModalChart()">&#128202; Export as PNG</button>
+                <button class="export-btn" onclick="exportModalChart()">&#128202; Export PNG</button>
+                <button class="export-btn" onclick="exportModalChartPDF()" style="background:#c0392b;">&#128462; Export PDF</button>
             </div>
         </div>
     </div>
 
     <script>
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTwiYM1VM9pLZcp0vHcpb3raCBSgRSkyCWcbON4Lrh9Dr3QJaRCq6PuIoVEZABbgm4sBoM2PdE6p4Ie/pub?gid=158607393&single=true&output=csv"; // paste published CSV URL here
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlGxzDvnPkzMgsphdd0waDdXF8pT3YrA40PzdMNUJ23cGclPy2T0Id1dU9oTuZo98N_ny_lSm0EDcI/pub?gid=1197599652&single=true&output=csv"; // paste published CSV URL here
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const MONTH_IDX = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -402,7 +442,14 @@
         let data2026New    = Array(12).fill(null);
         let data2026Review = Array(12).fill(null);
         let data2026Total  = Array(12).fill(null);
-        let annualMT = { labels: ['2024','2025','2026'], new: [null,null,null], review: [null,null,null], total: [0,0,0], subtext: ['','',''] };
+        let annualAT = { labels: ['2024','2025','2026'], new: [null,null,null], review: [null,null,null], total: [0,0,0], subtext: ['','',''] };
+
+        const THRF_RANGES = {
+            thrf1: { startYear: 2025, startMonth: 8,  endYear: 2026, endMonth: 1,  label: 'THRF 1 (Sep 25–Feb 26)' },
+            thrf2: { startYear: 2026, startMonth: 2,  endYear: 2026, endMonth: 7,  label: 'THRF 2 (Mar–Aug 26)'    },
+            thrf3: { startYear: 2026, startMonth: 8,  endYear: 2027, endMonth: 1,  label: 'THRF 3 (Sep 26–Feb 27)' },
+            thrf4: { startYear: 2027, startMonth: 2,  endYear: 2027, endMonth: 7,  label: 'THRF 4 (Mar–Aug 27)'    },
+        };
 
         let chart;
         let currentPeriod = 'all';
@@ -415,31 +462,32 @@
 
             // ── ALL TIME: stacked bar chart, x-axis = years ──────────────────
             if (period === 'all') {
-                legendNote.textContent = 'Stacked bars show annual New + Review composition';
+                legendNote.textContent = 'Bars show annual total OoS (New/Review breakdown not fully available)';
+
                 chart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: annualMT.labels,
+                        labels: annualAT.labels,
                         datasets: [
                             {
                                 label: 'Review',
-                                data: annualMT.review.map((v, i) => annualMT.new[i] !== null ? v : null),
+                                data: annualAT.review.map((v, i) => annualAT.new[i] !== null ? v : null),
                                 backgroundColor: 'rgba(230, 126, 115, 0.75)',
                                 borderColor: '#E67E73',
                                 borderWidth: 1.5
                             },
                             {
                                 label: 'New',
-                                data: annualMT.new,
+                                data: annualAT.new,
                                 backgroundColor: 'rgba(74, 155, 199, 0.75)',
                                 borderColor: '#4A9BC7',
                                 borderWidth: 1.5
                             },
                             {
                                 label: 'Total OoS (no breakdown)',
-                                data: annualMT.total.map((v, i) => annualMT.new[i] === null ? v : null),
-                                backgroundColor: 'rgba(155, 107, 158, 0.75)',
-                                borderColor: '#9B6B9E',
+                                data: annualAT.total.map((v, i) => annualAT.new[i] === null ? v : null),
+                                backgroundColor: 'rgba(91, 160, 138, 0.75)',
+                                borderColor: '#5BA08A',
                                 borderWidth: 1.5
                             }
                         ]
@@ -464,7 +512,7 @@
                                     },
                                     afterBody: function(items) {
                                         const idx = items[0].dataIndex;
-                                        return ['Total: ' + annualMT.total[idx].toLocaleString() + ' OoS (' + annualMT.subtext[idx] + ')'];
+                                        return ['Total: ' + annualAT.total[idx].toLocaleString() + ' OoS (' + annualAT.subtext[idx] + ')'];
                                     }
                                 }
                             }
@@ -479,6 +527,7 @@
                             y: {
                                 stacked: true,
                                 beginAtZero: true,
+                                grace: '10%',
                                 title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                                 ticks: {
                                     font: { size: 12 },
@@ -492,7 +541,7 @@
                 return;
             }
 
-            // ── 2024: line chart showing monthly totals only (no New/Review breakdown) ──
+            // ── 2024: line chart showing monthly totals only ─────────────────
             if (period === '2024') {
                 legendNote.textContent = 'Total OoS per month (New/Review breakdown not available for 2024)';
                 chart = new Chart(ctx, {
@@ -502,26 +551,21 @@
                         datasets: [{
                             label: '2024 Total OoS',
                             data: data2024Total,
-                            backgroundColor: 'rgba(155, 107, 158, 0.75)',
-                            borderColor: '#9B6B9E',
+                            backgroundColor: 'rgba(91, 160, 138, 0.75)',
+                            borderColor: '#5BA08A',
                             borderWidth: 1.5,
-                            borderRadius: 4
+                            pointRadius: 5,
+                            pointHoverRadius: 8
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: { font: { size: 13 }, padding: 15, usePointStyle: true }
-                            },
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                                padding: 12,
-                                titleFont: { size: 14 },
-                                bodyFont: { size: 13 },
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
                                 callbacks: {
                                     label: function(context) {
                                         if (context.parsed.y === null) return null;
@@ -531,40 +575,158 @@
                             }
                         },
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
-                                ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } },
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                            },
-                            x: {
-                                title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } },
-                                ticks: { font: { size: 12 } },
-                                grid: { display: false }
-                            }
+                            y: { beginAtZero: true, grace: '10%', title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
                         }
                     }
                 });
                 return;
             }
 
-            // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
-            legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
-
-            let newData, reviewData, totalData;
-            if (period === '2025') {
-                newData = data2025New; reviewData = data2025Review; totalData = data2025Total;
-            } else {
-                newData = data2026New; reviewData = data2026Review; totalData = data2026Total;
+            // ── 2026: stacked area (Jan–present real N/R) + total line ──────
+            if (period === '2026') {
+                legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: '2026 New',
+                                data: data2026New,
+                                borderColor: '#4A9BC7',
+                                backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: 'origin',
+                                pointRadius: 5,
+                                pointHoverRadius: 8
+                            },
+                            {
+                                label: '2026 Review',
+                                data: data2026Review,
+                                borderColor: '#E67E73',
+                                backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: '-1',
+                                pointRadius: 5,
+                                pointHoverRadius: 8
+                            },
+                            {
+                                label: '2026 Total OoS',
+                                data: data2026Total,
+                                borderColor: '#5BA08A',
+                                backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                                borderWidth: 3,
+                                tension: 0.4,
+                                fill: 'origin',
+                                pointRadius: 0,
+                                pointHoverRadius: 5
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y === null) return null;
+                                        if (context.dataset.label.includes('Review')) {
+                                            const actualReview = data2026Review[context.dataIndex];
+                                            if (actualReview === null) return null;
+                                            return context.dataset.label + ': ' + actualReview.toLocaleString() + ' OoS';
+                                        }
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grace: '10%', title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+                return;
             }
 
-            const isSparse = period === '2026';
-            const ptRadius  = isSparse ? 5 : 3;
-            const ptHover   = isSparse ? 8 : 6;
+            // ── THRF RANGES: line chart over 6-month window ───────────────────
+            if (THRF_RANGES[period]) {
+                const r = THRF_RANGES[period];
+                legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
+                const { labels, newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
+                const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
+                const datasets = [];
+                if (hasBreakdown) {
+                    datasets.push({
+                        label: 'New', data: newVals,
+                        borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                        borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 7
+                    });
+                    datasets.push({
+                        label: 'Review', data: reviewVals,
+                        borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                        borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 4, pointHoverRadius: 7
+                    });
+                }
+                datasets.push({
+                    label: 'Total OoS', data: totalVals,
+                    borderColor: '#5BA08A', backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                    borderWidth: 3, tension: 0.4, fill: 'origin',
+                    pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
+                });
+                const _reviewVals = reviewVals;
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y === null) return null;
+                                        if (context.dataset.label === 'Review') {
+                                            const actualReview = _reviewVals[context.dataIndex];
+                                            return actualReview !== null ? 'Review: ' + actualReview.toLocaleString() + ' OoS' : null;
+                                        }
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grace: '10%',
+                                title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 12 }, callback: v => v.toLocaleString() },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 12 }, maxRotation: 45 },
+                                grid: { display: false }
+                            }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+                return;
+            }
 
-            const newStacked = newData.map((val, i) =>
-                val !== null && reviewData[i] !== null ? val + reviewData[i] : null
-            );
+            // ── 2025: stacked area (Jul–Dec real N/R) + total line (all months) ──
+            legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle), Jul–Dec only';
 
             chart = new Chart(ctx, {
                 type: 'line',
@@ -572,38 +734,37 @@
                     labels: months,
                     datasets: [
                         {
-                            label: period + ' Review',
-                            data: reviewData,
-                            borderColor: '#E67E73',
-                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
-                            borderWidth: 2,
-                            tension: 0.4,
-                            fill: 'origin',
-                            pointRadius: ptRadius,
-                            pointHoverRadius: ptHover
-                        },
-                        {
-                            label: period + ' New',
-                            data: newStacked,
+                            label: '2025 New',
+                            data: data2025New,
                             borderColor: '#4A9BC7',
                             backgroundColor: 'rgba(74, 155, 199, 0.5)',
                             borderWidth: 2,
                             tension: 0.4,
-                            fill: '-1',
-                            pointRadius: ptRadius,
-                            pointHoverRadius: ptHover
+                            fill: 'origin',
+                            pointRadius: 3,
+                            pointHoverRadius: 6
                         },
                         {
-                            label: period + ' Total',
-                            data: totalData,
-                            borderColor: '#9B6B9E',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2.5,
+                            label: '2025 Review',
+                            data: data2025Review,
+                            borderColor: '#E67E73',
+                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                            borderWidth: 2,
                             tension: 0.4,
-                            fill: false,
+                            fill: '-1',
+                            pointRadius: 3,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '2025 Total OoS',
+                            data: data2025Total,
+                            borderColor: '#5BA08A',
+                            backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: 'origin',
                             pointRadius: 0,
-                            pointHoverRadius: 5,
-                            borderDash: [5, 5]
+                            pointHoverRadius: 5
                         }
                     ]
                 },
@@ -624,10 +785,10 @@
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-                                    if (context.dataset.label.includes('New')) {
-                                        const actualNew = newData[context.dataIndex];
-                                        if (actualNew === null) return null;
-                                        return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
+                                    if (context.dataset.label.includes('Review')) {
+                                        const actualReview = data2025Review[context.dataIndex];
+                                        if (actualReview === null) return null;
+                                        return context.dataset.label + ': ' + actualReview.toLocaleString() + ' OoS';
                                     }
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
@@ -637,11 +798,9 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '10%',
                             title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
-                            ticks: {
-                                font: { size: 12 },
-                                callback: function(value) { return value.toLocaleString(); }
-                            },
+                            ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } },
                             grid: { color: 'rgba(0, 0, 0, 0.05)' }
                         },
                         x: {
@@ -656,64 +815,93 @@
         }
 
         function updateSummary(period) {
-            let totalNew, totalReview, total, label, subtext;
-
-            if (period === '2024') {
-                total = data2024Total.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                label = '2024 Total';
-                subtext = 'Jul–Dec only';
-                // No New/Review breakdown for 2024
-                document.getElementById('totalLabel').textContent = label;
-                document.getElementById('totalValue').textContent = total.toLocaleString();
-                document.getElementById('totalSubtext').textContent = subtext;
-                document.getElementById('newValue').textContent = 'N/A';
-                document.getElementById('newSubtext').textContent = 'No breakdown available';
-                document.getElementById('reviewValue').textContent = 'N/A';
+            const noBreakdown = function(lbl, tot, sub) {
+                document.getElementById('totalLabel').textContent    = lbl;
+                document.getElementById('totalValue').textContent    = tot.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = sub;
+                document.getElementById('newValue').textContent      = 'N/A';
+                document.getElementById('newSubtext').textContent    = 'No breakdown available';
+                document.getElementById('reviewValue').textContent   = 'N/A';
                 document.getElementById('reviewSubtext').textContent = 'No breakdown available';
-                document.getElementById('newRatio').textContent = 'N/A New';
-                document.getElementById('reviewRatio').textContent = 'N/A Review';
+                document.getElementById('newRatio').textContent      = 'N/A New';
+                document.getElementById('reviewRatio').textContent   = 'N/A Review';
+            };
+
+            if (THRF_RANGES[period]) {
+                const r = THRF_RANGES[period];
+                const { newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
+                const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
+                const total        = totalVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                if (!hasBreakdown) {
+                    noBreakdown(r.label, total, '6-month THRF cycle');
+                } else {
+                    const totalNew    = newVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                    const totalReview = reviewVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                    const breakdownTotal = totalNew + totalReview;
+                    const newPct      = breakdownTotal > 0 ? Math.round((totalNew    / breakdownTotal) * 100) : 0;
+                    const reviewPct   = breakdownTotal > 0 ? Math.round((totalReview / breakdownTotal) * 100) : 0;
+                    document.getElementById('totalLabel').textContent    = r.label;
+                    document.getElementById('totalValue').textContent    = total.toLocaleString();
+                    document.getElementById('totalSubtext').textContent  = '6-month THRF cycle';
+                    document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                    document.getElementById('newSubtext').textContent    = newPct + '% of total';
+                    document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                    document.getElementById('reviewSubtext').textContent = reviewPct + '% of total';
+                    document.getElementById('newRatio').textContent      = newPct + '% New';
+                    document.getElementById('reviewRatio').textContent   = reviewPct + '% Review';
+                }
                 return;
-            } else if (period === '2025') {
-                totalNew = data2025New.reduce((sum, val) => sum + val, 0);
-                totalReview = data2025Review.reduce((sum, val) => sum + val, 0);
-                total = totalNew + totalReview;
-                label = '2025 Total';
-                subtext = 'Full year';
-            } else if (period === '2026') {
-                totalNew    = data2026New.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                totalReview = data2026Review.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                total       = data2026Total.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                label   = '2026 Total';
-                subtext = monthRangeLabel(data2026Total);
-            } else { // all
-                const new2025    = data2025New.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                const review2025 = data2025Review.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                const total2024  = data2024Total.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                const new2026    = data2026New.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                const review2026 = data2026Review.filter(v => v !== null).reduce((sum, val) => sum + val, 0);
-                totalNew    = new2025 + new2026;
-                totalReview = review2025 + review2026;
-                total       = totalNew + totalReview + total2024;
-                label = 'All Time Total';
-                subtext = '2024–2026 YTD';
             }
 
-            const newPercent = Math.round((totalNew / total) * 100);
-            const reviewPercent = Math.round((totalReview / total) * 100);
+            if (period === '2024') {
+                const total = data2024Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                noBreakdown('2024 Total', total, 'Jul–Nov only');
+            } else if (period === '2026') {
+                const totalNew    = data2026New.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const totalReview = data2026Review.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const t           = data2026Total.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const breakdownTotal = totalNew + totalReview;
+                const newPct      = breakdownTotal > 0 ? Math.round((totalNew    / breakdownTotal) * 100) : 0;
+                const reviewPct   = breakdownTotal > 0 ? Math.round((totalReview / breakdownTotal) * 100) : 0;
 
-            // Update cards
-            document.getElementById('totalLabel').textContent = label;
-            document.getElementById('totalValue').textContent = total.toLocaleString();
-            document.getElementById('totalSubtext').textContent = subtext;
+                document.getElementById('totalLabel').textContent    = '2026 Total';
+                document.getElementById('totalValue').textContent    = t.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = monthRangeLabel(data2026Total);
 
-            document.getElementById('newValue').textContent = totalNew.toLocaleString();
-            document.getElementById('newSubtext').textContent = newPercent + '% of total';
+                document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                document.getElementById('newSubtext').textContent    = newPct + '% of total';
 
-            document.getElementById('reviewValue').textContent = totalReview.toLocaleString();
-            document.getElementById('reviewSubtext').textContent = reviewPercent + '% of total';
+                document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                document.getElementById('reviewSubtext').textContent = reviewPct + '% of total';
 
-            document.getElementById('newRatio').textContent = newPercent + '% New';
-            document.getElementById('reviewRatio').textContent = reviewPercent + '% Review';
+                document.getElementById('newRatio').textContent    = newPct + '% New';
+                document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
+            } else if (period === 'all') {
+                const total = annualAT.total.reduce((s, v) => s + v, 0);
+                noBreakdown('All Time Total', total, '2024 + 2025 + 2026 YTD');
+            } else { // 2025
+                // Full year total (incl. estimated Jan–Jun)
+                const total       = data2025Total.reduce((s, v) => s + v, 0);
+                // Jul–Dec real N/R only
+                const totalNew    = data2025New.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const totalReview = data2025Review.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                const julDecTotal = totalNew + totalReview;
+                const newPct      = Math.round((totalNew    / julDecTotal) * 100);
+                const reviewPct   = Math.round((totalReview / julDecTotal) * 100);
+
+                document.getElementById('totalLabel').textContent    = '2025 Total';
+                document.getElementById('totalValue').textContent    = total.toLocaleString();
+                document.getElementById('totalSubtext').textContent  = 'Full year';
+
+                document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                document.getElementById('newSubtext').textContent    = newPct + '% of Jul–Dec total';
+
+                document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                document.getElementById('reviewSubtext').textContent = reviewPct + '% of Jul–Dec total';
+
+                document.getElementById('newRatio').textContent    = newPct + '% New';
+                document.getElementById('reviewRatio').textContent = reviewPct + '% Review';
+            }
         }
 
         function setTimePeriod(period, event) {
@@ -805,7 +993,6 @@
                 const sumNN   = arr => arr.filter(v => v !== null).reduce((s, v) => s + v, 0);
                 const getYear = y => byYear[y] || { new: Array(12).fill(null), review: Array(12).fill(null), total: Array(12).fill(null) };
                 const fillTot = (n, r, t) => t.map((v, i) => v !== null ? v : (n[i] !== null && r[i] !== null ? n[i] + r[i] : null));
-                const hasAny  = arr => arr.some(v => v !== null);
 
                 const y24 = getYear(2024);
                 const y25 = getYear(2025);
@@ -825,10 +1012,11 @@
                     2026: { new: data2026New, review: data2026Review, total: data2026Total }
                 };
 
-                annualMT = {
+                // Art Therapy annual chart is always total-only (new/review = null)
+                annualAT = {
                     labels:  ['2024', '2025', '2026'],
-                    new:     [null, hasAny(data2025New) ? sumNN(data2025New) : null, hasAny(data2026New) ? sumNN(data2026New) : null],
-                    review:  [null, hasAny(data2025Review) ? sumNN(data2025Review) : null, hasAny(data2026Review) ? sumNN(data2026Review) : null],
+                    new:     [null, null, null],
+                    review:  [null, null, null],
                     total:   [sumNN(data2024Total), sumNN(data2025Total), sumNN(data2026Total)],
                     subtext: [monthRangeLabel(data2024Total), monthRangeLabel(data2025Total), monthRangeLabel(data2026Total)]
                 };
@@ -868,9 +1056,9 @@
             while (y < endYear || (y === endYear && m <= endMonth)) {
                 labels.push(months[m] + ' ' + y);
                 const yd = allData[y] || {};
-                const nv = (yd.new  && yd.new[m]    != null) ? yd.new[m]    : null;
+                const nv = (yd.new    && yd.new[m]    != null) ? yd.new[m]    : null;
                 const rv = (yd.review && yd.review[m] != null) ? yd.review[m] : null;
-                const tv = (yd.total && yd.total[m]  != null) ? yd.total[m]  : null;
+                const tv = (yd.total  && yd.total[m]  != null) ? yd.total[m]  : null;
                 newVals.push(nv);
                 reviewVals.push(rv);
                 totalVals.push(tv !== null ? tv : (nv !== null && rv !== null ? nv + rv : null));
@@ -894,7 +1082,6 @@
 
             const { labels, newVals, reviewVals, totalVals } = getDataForRange(startYear, startMonth, endYear, endMonth);
             const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
-            const newStacked   = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
 
             const ctx = document.getElementById('modalChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
@@ -902,22 +1089,21 @@
             const datasets = [];
             if (hasBreakdown) {
                 datasets.push({
-                    label: 'Review', data: reviewVals,
-                    borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                    label: 'New', data: newVals,
+                    borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 3, pointHoverRadius: 6
                 });
                 datasets.push({
-                    label: 'New', data: newStacked,
-                    borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                    label: 'Review', data: reviewVals,
+                    borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 3, pointHoverRadius: 6
                 });
             }
             datasets.push({
                 label: 'Total OoS', data: totalVals,
-                borderColor: '#9B6B9E', backgroundColor: 'transparent',
-                borderWidth: 2.5, tension: 0.4, fill: false,
-                pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5,
-                borderDash: hasBreakdown ? [5, 5] : []
+                borderColor: '#5BA08A', backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                borderWidth: 3, tension: 0.4, fill: 'origin',
+                pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
             });
 
             modalChartInstance = new Chart(ctx, {
@@ -933,9 +1119,9 @@
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-                                    if (context.dataset.label === 'New') {
-                                        const actualNew = newVals[context.dataIndex];
-                                        return actualNew !== null ? 'New: ' + actualNew.toLocaleString() + ' OoS' : null;
+                                    if (context.dataset.label === 'Review') {
+                                        const actualReview = reviewVals[context.dataIndex];
+                                        return actualReview !== null ? 'Review: ' + actualReview.toLocaleString() + ' OoS' : null;
                                     }
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
@@ -945,6 +1131,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '10%',
                             title: { display: true, text: 'Occasions of Service', font: { size: 13, weight: 'bold' } },
                             ticks: { font: { size: 11 }, callback: v => v.toLocaleString() },
                             grid: { color: 'rgba(0,0,0,0.05)' }
@@ -1045,46 +1232,123 @@
         // Initialise — load data from Google Sheet
         fetchAndRender();
 
-        // Export to PNG function
-        function exportToPNG() {
-            // Hide controls during export
+        function getPeriodDisplayLabel() {
+            if (THRF_RANGES[currentPeriod]) {
+                const num = currentPeriod.replace('thrf', '');
+                return 'Reporting Period #' + num;
+            }
+            if (currentPeriod === 'all') return 'All Time';
+            return currentPeriod;
+        }
+
+        function _prepareExport() {
             const controls = document.getElementById('controls');
-            const legendNote = document.querySelector('.legend-note');
+            const overlay  = document.getElementById('exportTitleOverlay');
+            const periodEl = document.getElementById('exportPeriodLabel');
+            const dateEl   = document.getElementById('exportDateLabel');
             controls.style.display = 'none';
-            
-            // Optional: hide legend note too for cleaner export
-            const originalLegendDisplay = legendNote.style.display;
-            legendNote.style.display = 'none';
-            
-            // Capture the container
+            periodEl.textContent = getPeriodDisplayLabel();
+            dateEl.textContent   = 'Exported: ' + new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+            overlay.style.display = 'block';
+            return controls;
+        }
+
+        function _restoreExport(controls) {
+            controls.style.display = 'block';
+            document.getElementById('exportTitleOverlay').style.display = 'none';
+        }
+
+        function _buildFilename(ext) {
+            const mainTitle   = document.querySelector('h1').textContent;
+            const prefix      = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+            const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
+            const date        = new Date().toISOString().split('T')[0];
+            return prefix + '_' + periodLabel + '_' + date + '.' + ext;
+        }
+
+        function exportToPNG() {
+            const controls = _prepareExport();
             html2canvas(document.querySelector('.container'), {
-                backgroundColor: '#ffffff',
-                scale: 2, // Higher quality
-                logging: false
+                backgroundColor: '#ffffff', scale: 2, logging: false
             }).then(canvas => {
-                // Show controls again
-                controls.style.display = 'block';
-                legendNote.style.display = originalLegendDisplay;
-                
-                // Convert to blob and download
+                _restoreExport(controls);
                 canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
+                    const url  = URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
-                    const date = new Date().toISOString().split('T')[0];
-                    // Dynamic filename
-                    const mainTitle = document.querySelector('h1').textContent;
-                    const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
-                    link.download = prefix + '_' + periodLabel + '_' + date + '.png';
+                    link.download = _buildFilename('png');
                     link.href = url;
                     link.click();
                     URL.revokeObjectURL(url);
                 });
             }).catch(error => {
-                // Show controls if error occurs
-                controls.style.display = 'block';
-                legendNote.style.display = originalLegendDisplay;
+                _restoreExport(controls);
                 console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
+
+        function exportToPDF() {
+            const controls = _prepareExport();
+            html2canvas(document.querySelector('.container'), {
+                backgroundColor: '#ffffff', scale: 2, logging: false
+            }).then(canvas => {
+                _restoreExport(controls);
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/png');
+                const w = canvas.width / 2, h = canvas.height / 2;
+                const orientation = w > h ? 'landscape' : 'portrait';
+                const pdf = new jsPDF({ orientation, unit: 'px', format: [w, h] });
+                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+                pdf.save(_buildFilename('pdf'));
+            }).catch(error => {
+                _restoreExport(controls);
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
+
+        function exportModalChartPDF() {
+            const header       = document.querySelector('.modal-header');
+            const controls     = document.querySelector('.modal-range-controls');
+            const footer       = document.querySelector('.modal-footer');
+            const exportHeader = document.getElementById('modalExportHeader');
+
+            header.style.display      = 'none';
+            controls.style.display    = 'none';
+            footer.style.display      = 'none';
+            exportHeader.style.display = 'block';
+
+            const mainTitle = document.querySelector('h1').textContent;
+            document.getElementById('modalExportTitle').textContent = mainTitle;
+
+            html2canvas(document.querySelector('.modal-box'), {
+                backgroundColor: '#ffffff', scale: 2, logging: false
+            }).then(canvas => {
+                header.style.display      = 'flex';
+                controls.style.display    = 'flex';
+                footer.style.display      = 'flex';
+                exportHeader.style.display = 'none';
+
+                const { jsPDF } = window.jspdf;
+                const imgData   = canvas.toDataURL('image/png');
+                const w = canvas.width / 2, h = canvas.height / 2;
+                const orientation = w > h ? 'landscape' : 'portrait';
+                const pdf = new jsPDF({ orientation, unit: 'px', format: [w, h] });
+                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+
+                const sm   = parseInt(document.getElementById('modalStartMonth').value);
+                const sy   = document.getElementById('modalStartYear').value;
+                const em   = parseInt(document.getElementById('modalEndMonth').value);
+                const ey   = document.getElementById('modalEndYear').value;
+                const date = new Date().toISOString().split('T')[0];
+                const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+                pdf.save(prefix + '_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.pdf');
+            }).catch(error => {
+                header.style.display      = 'flex';
+                controls.style.display    = 'flex';
+                footer.style.display      = 'flex';
+                exportHeader.style.display = 'none';
+                console.error('Modal PDF export failed:', error);
                 alert('Export failed. Please try again.');
             });
         }
