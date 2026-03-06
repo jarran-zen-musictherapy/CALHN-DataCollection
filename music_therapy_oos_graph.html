@@ -302,25 +302,25 @@
         </div>
 
         <div class="summary">
-            <!-- Total -->
-            <div class="summary-card">
-                <h3 id="totalLabel">Total</h3>
-                <div class="value" id="totalValue">-</div>
-                <div class="subtext" id="totalSubtext">-</div>
-            </div>
-            
             <!-- New -->
             <div class="summary-card">
                 <h3>New Sessions</h3>
                 <div class="value" id="newValue">-</div>
                 <div class="subtext" id="newSubtext">-</div>
             </div>
-            
+
             <!-- Review -->
             <div class="summary-card">
                 <h3>Review Sessions</h3>
                 <div class="value" id="reviewValue">-</div>
                 <div class="subtext" id="reviewSubtext">-</div>
+            </div>
+
+            <!-- Total -->
+            <div class="summary-card">
+                <h3 id="totalLabel">Range Total</h3>
+                <div class="value" id="totalValue">-</div>
+                <div class="subtext" id="totalSubtext">-</div>
             </div>
 
             <!-- Ratio Display -->
@@ -584,31 +584,30 @@
             // ── THRF RANGES: line chart over 6-month window ───────────────────
             if (THRF_RANGES[period]) {
                 const r = THRF_RANGES[period];
-                legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
+                legendNote.textContent = 'Purple line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
                 const { labels, newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
                 const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
-                const newStacked   = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
+                const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
                 const datasets = [];
                 if (hasBreakdown) {
                     datasets.push({
-                        label: 'Review', data: reviewVals,
-                        borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                        label: 'New', data: newVals,
+                        borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
                         borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 7
                     });
                     datasets.push({
-                        label: 'New', data: newStacked,
-                        borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                        label: 'Review', data: reviewStacked,
+                        borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                         borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 4, pointHoverRadius: 7
                     });
                 }
                 datasets.push({
                     label: 'Total OoS', data: totalVals,
                     borderColor: '#9B6B9E', backgroundColor: 'transparent',
-                    borderWidth: 2.5, tension: 0.4, fill: false,
-                    pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5,
-                    borderDash: hasBreakdown ? [5, 5] : []
+                    borderWidth: 3, tension: 0.4, fill: false,
+                    pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
                 });
-                const _newVals = newVals;
+                const _reviewVals = reviewVals;
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: { labels, datasets },
@@ -622,9 +621,9 @@
                                 callbacks: {
                                     label: function(context) {
                                         if (context.parsed.y === null) return null;
-                                        if (context.dataset.label === 'New') {
-                                            const actualNew = _newVals[context.dataIndex];
-                                            return actualNew !== null ? 'New: ' + actualNew.toLocaleString() + ' OoS' : null;
+                                        if (context.dataset.label === 'Review') {
+                                            const actualReview = _reviewVals[context.dataIndex];
+                                            return actualReview !== null ? 'Review: ' + actualReview.toLocaleString() + ' OoS' : null;
                                         }
                                         return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                     }
@@ -651,7 +650,7 @@
             }
 
             // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
-            legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
+            legendNote.textContent = 'Purple line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
 
             let newData, reviewData, totalData;
             if (period === '2025') {
@@ -664,8 +663,8 @@
             const ptRadius  = isSparse ? 5 : 3;
             const ptHover   = isSparse ? 8 : 6;
 
-            const newStacked = newData.map((val, i) =>
-                val !== null && reviewData[i] !== null ? val + reviewData[i] : null
+            const reviewStacked = reviewData.map((val, i) =>
+                val !== null && newData[i] !== null ? val + newData[i] : null
             );
 
             chart = new Chart(ctx, {
@@ -674,10 +673,10 @@
                     labels: months,
                     datasets: [
                         {
-                            label: period + ' Review',
-                            data: reviewData,
-                            borderColor: '#E67E73',
-                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                            label: period + ' New',
+                            data: newData,
+                            borderColor: '#4A9BC7',
+                            backgroundColor: 'rgba(74, 155, 199, 0.5)',
                             borderWidth: 2,
                             tension: 0.4,
                             fill: 'origin',
@@ -685,10 +684,10 @@
                             pointHoverRadius: ptHover
                         },
                         {
-                            label: period + ' New',
-                            data: newStacked,
-                            borderColor: '#4A9BC7',
-                            backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                            label: period + ' Review',
+                            data: reviewStacked,
+                            borderColor: '#E67E73',
+                            backgroundColor: 'rgba(230, 126, 115, 0.5)',
                             borderWidth: 2,
                             tension: 0.4,
                             fill: '-1',
@@ -696,16 +695,15 @@
                             pointHoverRadius: ptHover
                         },
                         {
-                            label: period + ' Total',
+                            label: period + ' Total OoS',
                             data: totalData,
                             borderColor: '#9B6B9E',
                             backgroundColor: 'transparent',
-                            borderWidth: 2.5,
+                            borderWidth: 3,
                             tension: 0.4,
                             fill: false,
                             pointRadius: 0,
-                            pointHoverRadius: 5,
-                            borderDash: [5, 5]
+                            pointHoverRadius: 5
                         }
                     ]
                 },
@@ -726,10 +724,10 @@
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-                                    if (context.dataset.label.includes('New')) {
-                                        const actualNew = newData[context.dataIndex];
-                                        if (actualNew === null) return null;
-                                        return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
+                                    if (context.dataset.label.includes('Review')) {
+                                        const actualReview = reviewData[context.dataIndex];
+                                        if (actualReview === null) return null;
+                                        return context.dataset.label + ': ' + actualReview.toLocaleString() + ' OoS';
                                     }
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
@@ -1031,30 +1029,29 @@
 
             const { labels, newVals, reviewVals, totalVals } = getDataForRange(startYear, startMonth, endYear, endMonth);
             const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
-            const newStacked   = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
 
             const ctx = document.getElementById('modalChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
 
+            const reviewStacked = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
             const datasets = [];
             if (hasBreakdown) {
                 datasets.push({
-                    label: 'Review', data: reviewVals,
-                    borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                    label: 'New', data: newVals,
+                    borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 3, pointHoverRadius: 6
                 });
                 datasets.push({
-                    label: 'New', data: newStacked,
-                    borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                    label: 'Review', data: reviewStacked,
+                    borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
                     borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 3, pointHoverRadius: 6
                 });
             }
             datasets.push({
                 label: 'Total OoS', data: totalVals,
                 borderColor: '#9B6B9E', backgroundColor: 'transparent',
-                borderWidth: 2.5, tension: 0.4, fill: false,
-                pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5,
-                borderDash: hasBreakdown ? [5, 5] : []
+                borderWidth: 3, tension: 0.4, fill: false,
+                pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
             });
 
             modalChartInstance = new Chart(ctx, {
@@ -1070,9 +1067,9 @@
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null) return null;
-                                    if (context.dataset.label === 'New') {
-                                        const actualNew = newVals[context.dataIndex];
-                                        return actualNew !== null ? 'New: ' + actualNew.toLocaleString() + ' OoS' : null;
+                                    if (context.dataset.label === 'Review') {
+                                        const actualReview = reviewVals[context.dataIndex];
+                                        return actualReview !== null ? 'Review: ' + actualReview.toLocaleString() + ' OoS' : null;
                                     }
                                     return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                 }
