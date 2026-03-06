@@ -33,12 +33,19 @@
         }
         .time-selector {
             display: flex;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 30px;
         }
+        .time-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .time-btn {
-            padding: 10px 24px;
+            padding: 8px 20px;
             border: 2px solid #5BA08A;
             background: white;
             color: #5BA08A;
@@ -46,7 +53,15 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
+            line-height: 1.3;
+            text-align: center;
             transition: all 0.2s;
+        }
+        .time-btn small {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            opacity: 0.85;
         }
         .time-btn:hover {
             background: rgba(91, 160, 138, 0.1);
@@ -54,6 +69,9 @@
         .time-btn.active {
             background: #5BA08A;
             color: white;
+        }
+        @media (max-width: 480px) {
+            .time-btn { font-size: 13px; padding: 7px 14px; }
         }
         .export-btn {
             padding: 10px 24px;
@@ -264,14 +282,18 @@
 
         <div class="controls" id="controls">
             <div class="time-selector">
-                <button class="time-btn" onclick="setTimePeriod('2024', event)">2024</button>
-                <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
-                <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
-                <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
-                <button class="time-btn" onclick="setTimePeriod('thrf1', event)" title="Sep 2025 – Feb 2026">THRF 1<br><small style="font-size:10px;font-weight:400">Sep 25–Feb 26</small></button>
-                <button class="time-btn" onclick="setTimePeriod('thrf2', event)" title="Mar 2026 – Aug 2026">THRF 2<br><small style="font-size:10px;font-weight:400">Mar–Aug 26</small></button>
-                <button class="time-btn" onclick="setTimePeriod('thrf3', event)" title="Sep 2026 – Feb 2027">THRF 3<br><small style="font-size:10px;font-weight:400">Sep 26–Feb 27</small></button>
-                <button class="time-btn" onclick="setTimePeriod('thrf4', event)" title="Mar 2027 – Aug 2027">THRF 4<br><small style="font-size:10px;font-weight:400">Mar–Aug 27</small></button>
+                <div class="time-group">
+                    <button class="time-btn" onclick="setTimePeriod('2024', event)">2024</button>
+                    <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
+                    <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
+                    <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
+                </div>
+                <div class="time-group">
+                    <button class="time-btn" onclick="setTimePeriod('thrf1', event)">THRF 1<small>Sep 25–Feb 26</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf2', event)">THRF 2<small>Mar–Aug 26</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf3', event)">THRF 3<small>Sep 26–Feb 27</small></button>
+                    <button class="time-btn" onclick="setTimePeriod('thrf4', event)">THRF 4<small>Mar–Aug 27</small></button>
+                </div>
             </div>
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">&#128202; Export as PNG</button>
