@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CALHN Welness Services - Data Visualizations</title>
+    <title>Creative Therapies - Data Visualizations</title>
     <style>
         * {
             margin: 0;
@@ -87,6 +87,12 @@
         .card.mood-tracker-graph {
             border-left: 4px solid #E67E73;
         }
+        .card.affect-wheel {
+            border-left: 4px solid #9B6B9E;
+        }
+        .card.vas-tracker {
+            border-left: 4px solid #f1c40f;
+        }
         .section-heading {
             font-size: 12px;
             font-weight: 700;
@@ -117,29 +123,81 @@
             font-weight: 600;
             margin-top: 10px;
         }
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-oos {
+            background: linear-gradient(135deg, rgba(155, 107, 158, 0.8), rgba(91, 160, 138, 0.8));
+        }
+        .music-therapy .btn-oos {
+            background: rgba(155, 107, 158, 0.8);
+        }
+        .art-therapy .btn-oos {
+            background: rgba(91, 160, 138, 0.8);
+        }
+        .mood-tracker-graph .btn-oos {
+            background: rgba(230, 126, 115, 0.8);
+        }
+        .mood-tracker .btn-oos {
+            background: rgba(63, 185, 80, 0.8);
+        }
+        .affect-wheel .btn-oos {
+            background: rgba(155, 107, 158, 0.8);
+        }
+        .vas-tracker .btn-oos {
+            background: rgba(241, 196, 15, 0.8);
+        }
+        .btn-pg {
+            background: rgba(149, 165, 166, 0.8);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>CALHN Wellness Services</h1>
+            <h1>Creative Therapies</h1>
             <p class="subtitle"> Reporting Dashboard</p>
         </div>
 
         <div class="section-heading">Data Visualisers</div>
         <div class="cards">
             <!-- Music Therapy -->
-            <a href="graphs\music_therapy_oos_graph.html" class="card music-therapy">
+            <div class="card music-therapy">
                 <div class="card-icon">🎶</div>
-                <div class="card-title">Music Therapy <br> 
+                <div class="card-title">Music Therapy <br>
                    2024 | 2025 | 2026 </div>
                 <div class="card-description">
                     Interactive visualisation showing the breakdown of new patient sessions versus review sessions. Includes time period selector (2025/2026/All Time) and PNG export.
                 </div>
-                <span class="badge">Explore</span>
-            </a>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='graphs/music_therapy_oos_graph.html';">Occasions of Service</button>
+                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/music-therapy-priority-groups.html';">Priority Groups</button>
+                </div>
+            </div>
 
-            <!-- Spiritual Care -->
+            <!-- Spiritual Care - Commented out for now
             <a href="graphs\spiritual_care_oos_graph.html" class="card spiritual-care">
                 <div class="card-icon">🕊️</div>
                 <div class="card-title">Spiritual Care <br>
@@ -149,40 +207,72 @@
                 </div>
                 <span class="badge">Explore</span>
             </a>
+            -->
 
             <!-- Art Therapy -->
-            <a href="graphs\art_therapy_oos_graph.html" class="card art-therapy">
+            <div class="card art-therapy">
                 <div class="card-icon">🎨</div>
                 <div class="card-title">Art Therapy <br>
                     2024 | 2025 | 2026 </div>
                 <div class="card-description">
                     Interactive visualisation showing the breakdown of new patient sessions versus review sessions for Art Therapy. Includes time period selector (2024/2025/2026/All Time) and PNG export.
                 </div>
-                <span class="badge">Explore</span>
-            </a>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='graphs/art_therapy_oos_graph.html';">Occasions of Service</button>
+                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/art-therapy-priority-groups.html';">Priority Groups</button>
+                </div>
+            </div>
 
             <!-- MT Mood Tracker Graph -->
-            <a href="graphs\mood_tracker_graph.html" class="card mood-tracker-graph">
+            <div class="card mood-tracker-graph">
                 <div class="card-icon">📊</div>
                 <div class="card-title">MT Mood Tracker<br>Pre/Post Analysis</div>
                 <div class="card-description">
                     Pre/post observed mood score analysis across Music Therapy sessions. Charts average scores, trend over time, and score distributions.
                 </div>
-                <span class="badge" style="background: rgba(230,126,115,0.15); color: #E67E73;">Explore</span>
-            </a>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='graphs/mood_tracker_graph.html';">Occasions of Service</button>
+                </div>
+            </div>
         </div>
 
         <div class="section-heading">Clinical Tools</div>
         <div class="cards">
-            <!-- Mood Tracker -->
-            <a href="Apps\i-had-a-session.html" class="card mood-tracker">
+            <!-- Clinician Observed Changes -->
+            <div class="card mood-tracker">
                 <div class="card-icon">♬</div>
-                <div class="card-title">I Had a Session<br>Observed Mood Tracker</div>
+                <div class="card-title">Clinician Observed Changes<br>Mood Tracker</div>
                 <div class="card-description">
                     Log pre/post observed mood scores for MT sessions. Saves locally with optional Google Sheets sync.
                 </div>
-                <span class="badge" style="background: rgba(63,185,80,0.15); color: #3fb950;">Open</span>
-            </a>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='Apps/i-had-a-session.html';">Open Tool</button>
+                </div>
+            </div>
+
+            <!-- Affect Wheel -->
+            <div class="card affect-wheel">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">Affect Wheel</div>
+                <div class="card-description">
+                    Capture pre/post emotional state using an interactive 16-segment emotion wheel. Measure intensity and track emotional shifts across therapy sessions.
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='Apps/Affect_Wheel.html';">Open Tool</button>
+                </div>
+            </div>
+
+            <!-- VAS Tracker -->
+            <div class="card vas-tracker">
+                <div class="card-icon">😊</div>
+                <div class="card-title">Visual Analog Scale<br>Quick Mood Check</div>
+                <div class="card-description">
+                    Quick pre/post mood assessment using a 7-point visual analog scale with animated smiley faces. Perfect for time-constrained sessions.
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='Apps/VAS-tracker.html';">Open Tool</button>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
