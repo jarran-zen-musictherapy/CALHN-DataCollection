@@ -6,6 +6,7 @@
     <title>Art Therapy - New vs Review Sessions</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -278,6 +279,10 @@
 <body>
     <div class="container">
         <h1>Art Therapy - Occasions of Service</h1>
+        <div id="exportTitleOverlay" style="display:none; text-align:center; padding: 4px 0 10px;">
+            <div style="font-size:13px; color:#555; font-weight:500;" id="exportPeriodLabel"></div>
+            <div style="font-size:11px; color:#999;" id="exportDateLabel"></div>
+        </div>
         <p class="subtitle">New vs Review Sessions</p>
 
         <div class="controls" id="controls">
@@ -296,7 +301,8 @@
                 </div>
             </div>
             <div style="text-align: center; margin-top: 15px;">
-                <button class="export-btn" onclick="exportToPNG()">&#128202; Export as PNG</button>
+                <button class="export-btn" onclick="exportToPNG()">&#128202; Export PNG</button>
+                <button class="export-btn" onclick="exportToPDF()" style="background:#c0392b;">&#128462; Export PDF</button>
                 <button class="filter-btn" onclick="openDateRangeModal()">&#128197; Date Range</button>
                 <button class="filter-btn" onclick="fetchAndRender()">&#8635; Refresh</button>
             </div>
@@ -416,7 +422,8 @@
             </div>
             <p class="modal-summary-text" id="modalSummaryText"></p>
             <div class="modal-footer">
-                <button class="export-btn" onclick="exportModalChart()">&#128202; Export as PNG</button>
+                <button class="export-btn" onclick="exportModalChart()">&#128202; Export PNG</button>
+                <button class="export-btn" onclick="exportModalChartPDF()" style="background:#c0392b;">&#128462; Export PDF</button>
             </div>
         </div>
     </div>
@@ -520,6 +527,7 @@
                             y: {
                                 stacked: true,
                                 beginAtZero: true,
+                                grace: '10%',
                                 title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                                 ticks: {
                                     font: { size: 12 },
@@ -567,7 +575,7 @@
                             }
                         },
                         scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            y: { beginAtZero: true, grace: '10%', title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
                             x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
                         }
                     }
@@ -577,9 +585,9 @@
 
             // ── 2026: stacked area (Jan–present real N/R) + total line ──────
             if (period === '2026') {
-                legendNote.textContent = 'Teal line = Total OoS | Stacked areas show New/Review composition';
-                const newStacked26 = data2026New.map((val, i) =>
-                    val !== null && data2026Review[i] !== null ? val + data2026Review[i] : null
+                legendNote.textContent = 'Teal line = Total OoS (top boundary) | Stacked areas: New (bottom) + Review (middle)';
+                const reviewStacked26 = data2026Review.map((val, i) =>
+                    val !== null && data2026New[i] !== null ? val + data2026New[i] : null
                 );
                 chart = new Chart(ctx, {
                     type: 'line',
@@ -587,10 +595,10 @@
                         labels: months,
                         datasets: [
                             {
-                                label: '2026 Review',
-                                data: data2026Review,
-                                borderColor: '#E67E73',
-                                backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                                label: '2026 New',
+                                data: data2026New,
+                                borderColor: '#4A9BC7',
+                                backgroundColor: 'rgba(74, 155, 199, 0.5)',
                                 borderWidth: 2,
                                 tension: 0.4,
                                 fill: 'origin',
@@ -598,10 +606,10 @@
                                 pointHoverRadius: 8
                             },
                             {
-                                label: '2026 New',
-                                data: newStacked26,
-                                borderColor: '#4A9BC7',
-                                backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                                label: '2026 Review',
+                                data: reviewStacked26,
+                                borderColor: '#E67E73',
+                                backgroundColor: 'rgba(230, 126, 115, 0.5)',
                                 borderWidth: 2,
                                 tension: 0.4,
                                 fill: '-1',
@@ -609,16 +617,15 @@
                                 pointHoverRadius: 8
                             },
                             {
-                                label: '2026 Total',
+                                label: '2026 Total OoS',
                                 data: data2026Total,
                                 borderColor: '#5BA08A',
-                                backgroundColor: 'transparent',
-                                borderWidth: 2.5,
+                                backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                                borderWidth: 3,
                                 tension: 0.4,
-                                fill: false,
+                                fill: 'origin',
                                 pointRadius: 0,
-                                pointHoverRadius: 5,
-                                borderDash: [5, 5]
+                                pointHoverRadius: 5
                             }
                         ]
                     },
@@ -633,10 +640,10 @@
                                 callbacks: {
                                     label: function(context) {
                                         if (context.parsed.y === null) return null;
-                                        if (context.dataset.label.includes('New')) {
-                                            const actualNew = data2026New[context.dataIndex];
-                                            if (actualNew === null) return null;
-                                            return context.dataset.label + ': ' + actualNew.toLocaleString() + ' OoS';
+                                        if (context.dataset.label.includes('Review')) {
+                                            const actualReview = data2026Review[context.dataIndex];
+                                            if (actualReview === null) return null;
+                                            return context.dataset.label + ': ' + actualReview.toLocaleString() + ' OoS';
                                         }
                                         return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
                                     }
@@ -644,7 +651,7 @@
                             }
                         },
                         scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            y: { beginAtZero: true, grace: '10%', title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
                             x: { title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
                         },
                         interaction: { intersect: false, mode: 'index' }
@@ -675,8 +682,8 @@
                 }
                 datasets.push({
                     label: 'Total OoS', data: totalVals,
-                    borderColor: '#5BA08A', backgroundColor: 'transparent',
-                    borderWidth: 3, tension: 0.4, fill: false,
+                    borderColor: '#5BA08A', backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                    borderWidth: 3, tension: 0.4, fill: 'origin',
                     pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
                 });
                 const _reviewVals = reviewVals;
@@ -705,6 +712,7 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
+                                grace: '10%',
                                 title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                                 ticks: { font: { size: 12 }, callback: v => v.toLocaleString() },
                                 grid: { color: 'rgba(0,0,0,0.05)' }
@@ -759,10 +767,10 @@
                             label: '2025 Total OoS',
                             data: data2025Total,
                             borderColor: '#5BA08A',
-                            backgroundColor: 'transparent',
+                            backgroundColor: 'rgba(91, 160, 138, 0.10)',
                             borderWidth: 3,
                             tension: 0.4,
-                            fill: false,
+                            fill: 'origin',
                             pointRadius: 0,
                             pointHoverRadius: 5
                         }
@@ -798,6 +806,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '10%',
                             title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
                             ticks: { font: { size: 12 }, callback: function(value) { return value.toLocaleString(); } },
                             grid: { color: 'rgba(0, 0, 0, 0.05)' }
@@ -1101,8 +1110,8 @@
             }
             datasets.push({
                 label: 'Total OoS', data: totalVals,
-                borderColor: '#5BA08A', backgroundColor: 'transparent',
-                borderWidth: 3, tension: 0.4, fill: false,
+                borderColor: '#5BA08A', backgroundColor: 'rgba(91, 160, 138, 0.10)',
+                borderWidth: 3, tension: 0.4, fill: 'origin',
                 pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5
             });
 
@@ -1131,6 +1140,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '10%',
                             title: { display: true, text: 'Occasions of Service', font: { size: 13, weight: 'bold' } },
                             ticks: { font: { size: 11 }, callback: v => v.toLocaleString() },
                             grid: { color: 'rgba(0,0,0,0.05)' }
@@ -1231,37 +1241,120 @@
         // Initialise — load data from Google Sheet
         fetchAndRender();
 
+        function getPeriodDisplayLabel() {
+            if (THRF_RANGES[currentPeriod]) return THRF_RANGES[currentPeriod].label;
+            if (currentPeriod === 'all') return 'All Time';
+            return currentPeriod;
+        }
+
+        function _prepareExport() {
+            const controls = document.getElementById('controls');
+            const overlay  = document.getElementById('exportTitleOverlay');
+            const periodEl = document.getElementById('exportPeriodLabel');
+            const dateEl   = document.getElementById('exportDateLabel');
+            controls.style.display = 'none';
+            periodEl.textContent = getPeriodDisplayLabel();
+            dateEl.textContent   = 'Exported: ' + new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+            overlay.style.display = 'block';
+            return controls;
+        }
+
+        function _restoreExport(controls) {
+            controls.style.display = 'block';
+            document.getElementById('exportTitleOverlay').style.display = 'none';
+        }
+
+        function _buildFilename(ext) {
+            const mainTitle   = document.querySelector('h1').textContent;
+            const prefix      = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+            const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
+            const date        = new Date().toISOString().split('T')[0];
+            return prefix + '_' + periodLabel + '_' + date + '.' + ext;
+        }
+
         function exportToPNG() {
-            const controls   = document.getElementById('controls');
-            const legendNote = document.getElementById('legendNote');
-            controls.style.display   = 'none';
-            legendNote.style.display = 'none';
-
+            const controls = _prepareExport();
             html2canvas(document.querySelector('.container'), {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                logging: false
+                backgroundColor: '#ffffff', scale: 2, logging: false
             }).then(canvas => {
-                controls.style.display   = 'block';
-                legendNote.style.display = '';
-
+                _restoreExport(controls);
                 canvas.toBlob(function(blob) {
                     const url  = URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    const periodLabel = currentPeriod === 'all' ? 'All_Time' : currentPeriod;
-                    const date = new Date().toISOString().split('T')[0];
-                    // Dynamic filename
-                    const mainTitle = document.querySelector('h1').textContent;
-                    const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
-                    link.download = prefix + '_' + periodLabel + '_' + date + '.png';
+                    link.download = _buildFilename('png');
                     link.href = url;
                     link.click();
                     URL.revokeObjectURL(url);
                 });
             }).catch(error => {
-                controls.style.display   = 'block';
-                legendNote.style.display = '';
+                _restoreExport(controls);
                 console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
+
+        function exportToPDF() {
+            const controls = _prepareExport();
+            html2canvas(document.querySelector('.container'), {
+                backgroundColor: '#ffffff', scale: 2, logging: false
+            }).then(canvas => {
+                _restoreExport(controls);
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/png');
+                const w = canvas.width / 2, h = canvas.height / 2;
+                const orientation = w > h ? 'landscape' : 'portrait';
+                const pdf = new jsPDF({ orientation, unit: 'px', format: [w, h] });
+                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+                pdf.save(_buildFilename('pdf'));
+            }).catch(error => {
+                _restoreExport(controls);
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
+
+        function exportModalChartPDF() {
+            const header       = document.querySelector('.modal-header');
+            const controls     = document.querySelector('.modal-range-controls');
+            const footer       = document.querySelector('.modal-footer');
+            const exportHeader = document.getElementById('modalExportHeader');
+
+            header.style.display      = 'none';
+            controls.style.display    = 'none';
+            footer.style.display      = 'none';
+            exportHeader.style.display = 'block';
+
+            const mainTitle = document.querySelector('h1').textContent;
+            document.getElementById('modalExportTitle').textContent = mainTitle;
+
+            html2canvas(document.querySelector('.modal-box'), {
+                backgroundColor: '#ffffff', scale: 2, logging: false
+            }).then(canvas => {
+                header.style.display      = 'flex';
+                controls.style.display    = 'flex';
+                footer.style.display      = 'flex';
+                exportHeader.style.display = 'none';
+
+                const { jsPDF } = window.jspdf;
+                const imgData   = canvas.toDataURL('image/png');
+                const w = canvas.width / 2, h = canvas.height / 2;
+                const orientation = w > h ? 'landscape' : 'portrait';
+                const pdf = new jsPDF({ orientation, unit: 'px', format: [w, h] });
+                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+
+                const sm   = parseInt(document.getElementById('modalStartMonth').value);
+                const sy   = document.getElementById('modalStartYear').value;
+                const em   = parseInt(document.getElementById('modalEndMonth').value);
+                const ey   = document.getElementById('modalEndYear').value;
+                const date = new Date().toISOString().split('T')[0];
+                const prefix = mainTitle.split(' - ')[0].replace(/\s+/g, '_') + '_OOS';
+                pdf.save(prefix + '_' + months[sm] + '_' + sy + '_to_' + months[em] + '_' + ey + '_' + date + '.pdf');
+            }).catch(error => {
+                header.style.display      = 'flex';
+                controls.style.display    = 'flex';
+                footer.style.display      = 'flex';
+                exportHeader.style.display = 'none';
+                console.error('Modal PDF export failed:', error);
                 alert('Export failed. Please try again.');
             });
         }
