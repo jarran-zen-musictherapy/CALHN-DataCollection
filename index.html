@@ -87,6 +87,12 @@
         .card.mood-tracker-graph {
             border-left: 4px solid #E67E73;
         }
+        .card.affect-wheel {
+            border-left: 4px solid #9B6B9E;
+        }
+        .card.vas-tracker {
+            border-left: 4px solid #f1c40f;
+        }
         .section-heading {
             font-size: 12px;
             font-weight: 700;
@@ -153,6 +159,12 @@
         }
         .mood-tracker .btn-oos {
             background: rgba(63, 185, 80, 0.8);
+        }
+        .affect-wheel .btn-oos {
+            background: rgba(155, 107, 158, 0.8);
+        }
+        .vas-tracker .btn-oos {
+            background: rgba(241, 196, 15, 0.8);
         }
         .btn-pg {
             background: rgba(149, 165, 166, 0.8);
@@ -237,6 +249,32 @@
                 <div class="button-group">
                     <button class="btn btn-oos" onclick="window.location.href='Apps/i-had-a-session.html';">Open Tool</button>
                     <button class="btn btn-pg" onclick="window.location.href='Priority Group/clinician-observed-changes-priority-groups.html';">Priority Groups</button>
+                </div>
+            </div>
+
+            <!-- Affect Wheel -->
+            <div class="card affect-wheel">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">Affect Wheel</div>
+                <div class="card-description">
+                    Capture pre/post emotional state using an interactive 16-segment emotion wheel. Measure intensity and track emotional shifts across therapy sessions.
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='Apps/Affect_Wheel.html';">Open Tool</button>
+                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/affect-wheel-priority-groups.html';">Priority Groups</button>
+                </div>
+            </div>
+
+            <!-- VAS Tracker -->
+            <div class="card vas-tracker">
+                <div class="card-icon">😊</div>
+                <div class="card-title">Visual Analog Scale<br>Quick Mood Check</div>
+                <div class="card-description">
+                    Quick pre/post mood assessment using a 7-point visual analog scale with animated smiley faces. Perfect for time-constrained sessions.
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-oos" onclick="window.location.href='Apps/VAS-tracker.html';">Open Tool</button>
+                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/vas-tracker-priority-groups.html';">Priority Groups</button>
                 </div>
             </div>
         </div>
