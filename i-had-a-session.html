@@ -61,6 +61,24 @@
   }
   input:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+  [data-theme="light"] {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --border: #d0d7de;
+    --border2: #c6cdd5;
+    --muted: #8c959f;
+    --subtle: #57606a;
+    --text: #24292f;
+    --bright: #1f2328;
+    --blue: #0969da;
+    --blue-bg: #ddf4ff;
+    --green: #1a7f37;
+    --green-dark: #116329;
+    --green-mid: #1a7f37;
+    --yellow: #9a6700;
+    --red: #cf222e;
+  }
+
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
@@ -98,6 +116,18 @@
   }
   #header-title { font-weight: 700; font-size: 15px; color: var(--bright); letter-spacing: -0.02em; }
   #header-sub   { font-size: 11px; color: var(--subtle); margin-top: 1px; }
+  #theme-toggle {
+    margin-left: 8px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--subtle);
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  #theme-toggle:hover { border-color: var(--blue); color: var(--bright); }
   #tab-bar {
     margin-left: auto;
     display: flex;
@@ -308,8 +338,8 @@
     font-size: 13px;
   }
   #confirm-clear-btn {
-    background: #2d1b1b;
-    border-color: #6e2020;
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+    border-color: var(--red);
     color: var(--red);
     display: none;
   }
@@ -344,6 +374,7 @@
       <div id="header-title">I had a session…</div>
       <div id="header-sub">Observed Mood · CALHN MT</div>
     </div>
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
     <div id="tab-bar">
       <button class="tab-btn active" id="tab-entry" onclick="switchTab('entry')">New Entry</button>
       <button class="tab-btn" id="tab-log" onclick="switchTab('log')">Log (0)</button>
@@ -434,6 +465,40 @@
 </div><!-- /app -->
 
 <script>
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+(function () {
+  const saved = localStorage.getItem('calhn_theme');
+  if (saved === 'light') {
+    document.documentElement.dataset.theme = 'light';
+  }
+})();
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.dataset.theme === 'light';
+  if (isLight) {
+    delete html.dataset.theme;
+    localStorage.setItem('calhn_theme', 'dark');
+    document.getElementById('theme-toggle').textContent = '☀';
+    document.querySelector('meta[name="theme-color"]').content = '#0d1117';
+  } else {
+    html.dataset.theme = 'light';
+    localStorage.setItem('calhn_theme', 'light');
+    document.getElementById('theme-toggle').textContent = '🌙';
+    document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
+  }
+}
+
+// Sync toggle icon on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('theme-toggle');
+  if (document.documentElement.dataset.theme === 'light') {
+    btn.textContent = '🌙';
+    document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
+  }
+});
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "calhn_mood_sessions";

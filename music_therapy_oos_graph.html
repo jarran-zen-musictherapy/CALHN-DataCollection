@@ -262,6 +262,10 @@
                 <button class="time-btn" onclick="setTimePeriod('2025', event)">2025</button>
                 <button class="time-btn" onclick="setTimePeriod('2026', event)">2026</button>
                 <button class="time-btn active" onclick="setTimePeriod('all', event)">All Time</button>
+                <button class="time-btn" onclick="setTimePeriod('thrf1', event)" title="Sep 2025 – Feb 2026">THRF 1<br><small style="font-size:10px;font-weight:400">Sep 25–Feb 26</small></button>
+                <button class="time-btn" onclick="setTimePeriod('thrf2', event)" title="Mar 2026 – Aug 2026">THRF 2<br><small style="font-size:10px;font-weight:400">Mar–Aug 26</small></button>
+                <button class="time-btn" onclick="setTimePeriod('thrf3', event)" title="Sep 2026 – Feb 2027">THRF 3<br><small style="font-size:10px;font-weight:400">Sep 26–Feb 27</small></button>
+                <button class="time-btn" onclick="setTimePeriod('thrf4', event)" title="Mar 2027 – Aug 2027">THRF 4<br><small style="font-size:10px;font-weight:400">Mar–Aug 27</small></button>
             </div>
             <div style="text-align: center; margin-top: 15px;">
                 <button class="export-btn" onclick="exportToPNG()">📊 Export as PNG</button>
@@ -403,6 +407,13 @@
         let data2026Review = Array(12).fill(null);
         let data2026Total  = Array(12).fill(null);
         let annualMT = { labels: ['2024','2025','2026'], new: [null,null,null], review: [null,null,null], total: [0,0,0], subtext: ['','',''] };
+
+        const THRF_RANGES = {
+            thrf1: { startYear: 2025, startMonth: 8,  endYear: 2026, endMonth: 1,  label: 'THRF 1 (Sep 25–Feb 26)' },
+            thrf2: { startYear: 2026, startMonth: 2,  endYear: 2026, endMonth: 7,  label: 'THRF 2 (Mar–Aug 26)'    },
+            thrf3: { startYear: 2026, startMonth: 8,  endYear: 2027, endMonth: 1,  label: 'THRF 3 (Sep 26–Feb 27)' },
+            thrf4: { startYear: 2027, startMonth: 2,  endYear: 2027, endMonth: 7,  label: 'THRF 4 (Mar–Aug 27)'    },
+        };
 
         let chart;
         let currentPeriod = 'all';
@@ -548,6 +559,75 @@
                 return;
             }
 
+            // ── THRF RANGES: line chart over 6-month window ───────────────────
+            if (THRF_RANGES[period]) {
+                const r = THRF_RANGES[period];
+                legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
+                const { labels, newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
+                const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
+                const newStacked   = newVals.map((v, i) => v !== null && reviewVals[i] !== null ? v + reviewVals[i] : null);
+                const datasets = [];
+                if (hasBreakdown) {
+                    datasets.push({
+                        label: 'Review', data: reviewVals,
+                        borderColor: '#E67E73', backgroundColor: 'rgba(230, 126, 115, 0.5)',
+                        borderWidth: 2, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 7
+                    });
+                    datasets.push({
+                        label: 'New', data: newStacked,
+                        borderColor: '#4A9BC7', backgroundColor: 'rgba(74, 155, 199, 0.5)',
+                        borderWidth: 2, tension: 0.4, fill: '-1', pointRadius: 4, pointHoverRadius: 7
+                    });
+                }
+                datasets.push({
+                    label: 'Total OoS', data: totalVals,
+                    borderColor: '#9B6B9E', backgroundColor: 'transparent',
+                    borderWidth: 2.5, tension: 0.4, fill: false,
+                    pointRadius: hasBreakdown ? 0 : 4, pointHoverRadius: 5,
+                    borderDash: hasBreakdown ? [5, 5] : []
+                });
+                const _newVals = newVals;
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.85)', padding: 12,
+                                titleFont: { size: 14 }, bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y === null) return null;
+                                        if (context.dataset.label === 'New') {
+                                            const actualNew = _newVals[context.dataIndex];
+                                            return actualNew !== null ? 'New: ' + actualNew.toLocaleString() + ' OoS' : null;
+                                        }
+                                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' OoS';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Occasions of Service', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 12 }, callback: v => v.toLocaleString() },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Month', font: { size: 14, weight: 'bold' } },
+                                ticks: { font: { size: 12 }, maxRotation: 45 },
+                                grid: { display: false }
+                            }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+                return;
+            }
+
             // ── YEAR-SPECIFIC: stacked area line chart, x-axis = months ─────
             legendNote.textContent = 'Purple line = Total OoS | Stacked areas show composition (New + Review)';
 
@@ -657,6 +737,41 @@
 
         function updateSummary(period) {
             let totalNew, totalReview, total, label, subtext;
+
+            if (THRF_RANGES[period]) {
+                const r = THRF_RANGES[period];
+                const { newVals, reviewVals, totalVals } = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
+                const hasBreakdown = newVals.some(v => v !== null) && reviewVals.some(v => v !== null);
+                totalNew    = newVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                totalReview = reviewVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                total       = totalVals.filter(v => v !== null).reduce((s, v) => s + v, 0);
+                if (!hasBreakdown) { total = totalVals.filter(v => v !== null).reduce((s, v) => s + v, 0); }
+                label   = r.label;
+                subtext = '6-month THRF cycle';
+
+                document.getElementById('totalLabel').textContent = label;
+                document.getElementById('totalValue').textContent = total.toLocaleString();
+                document.getElementById('totalSubtext').textContent = subtext;
+
+                if (hasBreakdown) {
+                    const newPercent    = total > 0 ? Math.round((totalNew / total) * 100)    : 0;
+                    const reviewPercent = total > 0 ? Math.round((totalReview / total) * 100) : 0;
+                    document.getElementById('newValue').textContent      = totalNew.toLocaleString();
+                    document.getElementById('newSubtext').textContent    = newPercent + '% of total';
+                    document.getElementById('reviewValue').textContent   = totalReview.toLocaleString();
+                    document.getElementById('reviewSubtext').textContent = reviewPercent + '% of total';
+                    document.getElementById('newRatio').textContent      = newPercent + '% New';
+                    document.getElementById('reviewRatio').textContent   = reviewPercent + '% Review';
+                } else {
+                    document.getElementById('newValue').textContent      = 'N/A';
+                    document.getElementById('newSubtext').textContent    = 'No breakdown available';
+                    document.getElementById('reviewValue').textContent   = 'N/A';
+                    document.getElementById('reviewSubtext').textContent = 'No breakdown available';
+                    document.getElementById('newRatio').textContent      = 'N/A New';
+                    document.getElementById('reviewRatio').textContent   = 'N/A Review';
+                }
+                return;
+            }
 
             if (period === '2024') {
                 total = data2024Total.filter(v => v !== null).reduce((sum, val) => sum + val, 0);

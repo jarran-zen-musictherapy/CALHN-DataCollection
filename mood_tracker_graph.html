@@ -158,6 +158,67 @@
             border-top: 1px solid #ecf0f1;
         }
 
+        /* Filter row */
+        #filter-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-right: 4px;
+        }
+        .filter-btn {
+            background: white;
+            color: #E67E73;
+            border: 2px solid #E67E73;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            line-height: 1.3;
+            text-align: center;
+        }
+        .filter-btn:hover { background: #E67E73; color: white; }
+        .filter-btn.active { background: #E67E73; color: white; }
+        .date-range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .date-range-inputs input[type="date"] {
+            padding: 6px 10px;
+            border: 2px solid #E67E73;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #2c3e50;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+        }
+        .date-range-inputs .apply-btn {
+            background: #E67E73;
+            color: white;
+            border: 2px solid #E67E73;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+        }
+        .date-range-inputs .apply-btn:hover { background: #d35f52; border-color: #d35f52; }
+        .date-range-sep { color: #7f8c8d; font-size: 13px; }
+
         /* Hidden state for charts section */
         #charts-area { display: none; }
     </style>
@@ -173,6 +234,22 @@
     </div>
 
     <div id="status"></div>
+
+    <!-- Filter / Date Range Row -->
+    <div id="filter-row" style="display:none">
+        <span class="filter-label">Period:</span>
+        <button class="filter-btn active" id="filterAll" onclick="applyPreset('all')">All Time</button>
+        <button class="filter-btn" id="filterThrf1" onclick="applyPreset('thrf1')" title="Sep 2025 – Feb 2026">THRF 1<br><small style="font-size:10px;font-weight:400">Sep 25–Feb 26</small></button>
+        <button class="filter-btn" id="filterThrf2" onclick="applyPreset('thrf2')" title="Mar 2026 – Aug 2026">THRF 2<br><small style="font-size:10px;font-weight:400">Mar–Aug 26</small></button>
+        <button class="filter-btn" id="filterThrf3" onclick="applyPreset('thrf3')" title="Sep 2026 – Feb 2027">THRF 3<br><small style="font-size:10px;font-weight:400">Sep 26–Feb 27</small></button>
+        <button class="filter-btn" id="filterThrf4" onclick="applyPreset('thrf4')" title="Mar 2027 – Aug 2027">THRF 4<br><small style="font-size:10px;font-weight:400">Mar–Aug 27</small></button>
+        <div class="date-range-inputs">
+            <input type="date" id="rangeStart" title="Start date">
+            <span class="date-range-sep">–</span>
+            <input type="date" id="rangeEnd" title="End date">
+            <button class="apply-btn" onclick="applyCustomRange()">Apply</button>
+        </div>
+    </div>
 
     <div id="charts-area">
         <!-- Summary stats strip -->
@@ -238,8 +315,17 @@
     // ── CONFIG ──────────────────────────────────────────────────────────────
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4s61fogaguvaP9dJAKrDDkj8nReLPgGHB6gWYA4PtUcHapTxhPcATdtp0CaaRYtzTTX4GinjZrrvN/pub?gid=0&single=true&output=csv"; // Jarran will paste the published CSV URL here
 
+    // ── THRF RANGES ──────────────────────────────────────────────────────────
+    const THRF_RANGES = {
+        thrf1: { start: new Date('2025-09-01'), end: new Date('2026-02-28'), label: 'THRF 1' },
+        thrf2: { start: new Date('2026-03-01'), end: new Date('2026-08-31'), label: 'THRF 2' },
+        thrf3: { start: new Date('2026-09-01'), end: new Date('2027-02-28'), label: 'THRF 3' },
+        thrf4: { start: new Date('2027-03-01'), end: new Date('2027-08-31'), label: 'THRF 4' },
+    };
+
     // ── STATE ───────────────────────────────────────────────────────────────
     let charts = {};
+    let allRows = [];
 
     // ── CHART.JS DEFAULTS ───────────────────────────────────────────────────
     Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
@@ -554,10 +640,61 @@
         renderChart3(rows);
     }
 
+    // ── FILTER LOGIC ──────────────────────────────────────────────────────────
+    function filterRows(rows, preset) {
+        if (preset === 'all' || !preset) return rows;
+        const range = THRF_RANGES[preset];
+        if (!range) return rows;
+        return rows.filter(r => r.dateObj && r.dateObj >= range.start && r.dateObj <= range.end);
+    }
+
+    function setActiveFilterBtn(id) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
+
+    function applyPreset(preset) {
+        const btnMap = { all: 'filterAll', thrf1: 'filterThrf1', thrf2: 'filterThrf2', thrf3: 'filterThrf3', thrf4: 'filterThrf4' };
+        setActiveFilterBtn(btnMap[preset] || 'filterAll');
+        const filtered = filterRows(allRows, preset);
+        destroyCharts();
+        if (filtered.length === 0) {
+            showStatus('error', 'No sessions found in this reporting period.');
+            document.getElementById('charts-area').style.display = 'none';
+            return;
+        }
+        hideStatus();
+        renderStats(filtered);
+        renderCharts(filtered);
+    }
+
+    function applyCustomRange() {
+        const startVal = document.getElementById('rangeStart').value;
+        const endVal   = document.getElementById('rangeEnd').value;
+        if (!startVal || !endVal) { alert('Please select both a start and end date.'); return; }
+        const start = new Date(startVal);
+        const end   = new Date(endVal);
+        end.setHours(23, 59, 59, 999);
+        if (start > end) { alert('Start date must be before end date.'); return; }
+        setActiveFilterBtn(null);
+        const filtered = allRows.filter(r => r.dateObj && r.dateObj >= start && r.dateObj <= end);
+        destroyCharts();
+        if (filtered.length === 0) {
+            showStatus('error', 'No sessions found in the selected date range.');
+            document.getElementById('charts-area').style.display = 'none';
+            return;
+        }
+        hideStatus();
+        renderStats(filtered);
+        renderCharts(filtered);
+    }
+
     // ── FETCH & RENDER ────────────────────────────────────────────────────────
     async function fetchAndRender() {
         destroyCharts();
         document.getElementById('charts-area').style.display = 'none';
+        document.getElementById('filter-row').style.display = 'none';
         showStatus('loading', 'Loading data from Google Sheets…');
 
         if (!SHEET_CSV_URL) {
@@ -574,7 +711,10 @@
             if (rows.length === 0) {
                 throw new Error('No valid data rows found. Check that the CSV has the expected columns: Timestamp, Date, Pre, Post, Change, Note, Mode.');
             }
+            allRows = rows;
             hideStatus();
+            document.getElementById('filter-row').style.display = 'flex';
+            setActiveFilterBtn('filterAll');
             renderStats(rows);
             renderCharts(rows);
         } catch (e) {
@@ -585,10 +725,12 @@
     // ── EXPORT ────────────────────────────────────────────────────────────────
     function exportToPNG() {
         const controls = document.getElementById('controls');
+        const filterRow = document.getElementById('filter-row');
         const statusEl = document.getElementById('status');
         const statusWasVisible = statusEl.style.display !== 'none';
 
         controls.style.display = 'none';
+        filterRow.style.display = 'none';
         statusEl.style.display = 'none';
 
         html2canvas(document.querySelector('.container'), {
@@ -605,10 +747,12 @@
                 link.click();
                 URL.revokeObjectURL(url);
                 controls.style.display = 'flex';
+                filterRow.style.display = 'flex';
                 if (statusWasVisible) statusEl.style.display = 'block';
             });
         }).catch(err => {
             controls.style.display = 'flex';
+            filterRow.style.display = 'flex';
             if (statusWasVisible) statusEl.style.display = 'block';
             alert('Export failed. Please try again.');
             console.error('Export failed:', err);
