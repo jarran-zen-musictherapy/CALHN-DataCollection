@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CALHN Music Therapy — OoS Counter</title>
+<!-- SheetJS for Excel support. If this CDN is blocked by SA Health network,
+     CSV files will still work perfectly without it. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:       #006272;
+    --teal-mid:   #004f5c;
+    --teal-dark:  #003540;
+    --teal-light: #e0f0f2;
+    --teal-pale:  #f0f8f9;
+    --green:      #1a6b3c;
+    --green-bg:   #e8f5ee;
+    --amber:      #92400e;
+    --amber-bg:   #fef3c7;
+    --red:        #991b1b;
+    --red-bg:     #fee2e2;
+    --grey-100:   #f4f6f7;
+    --grey-200:   #e5eaeb;
+    --grey-400:   #9aa8ab;
+    --grey-700:   #3d5156;
+    --white:      #ffffff;
+    --font:       'DM Sans', 'Segoe UI', sans-serif;
+    --mono:       'DM Mono', 'Consolas', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--grey-100);
+    color: var(--grey-700);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    background: var(--teal-dark);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 12px rgba(0,53,64,0.18);
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.01em;
+  }
+  header p {
+    font-size: 12px;
+    color: var(--grey-400);
+    font-weight: 300;
+  }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--grey-400);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: var(--mono);
+  }
+
+  /* ── Main layout ── */
+  main {
+    width: 100%;
+    max-width: 860px;
+    padding: 32px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--grey-200);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── Drop zone ── */
+  .drop-zone {
+    border: 2px dashed var(--grey-200);
+    border-radius: 10px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    background: var(--teal-pale);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--teal);
+    background: var(--teal-light);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-icon { font-size: 36px; margin-bottom: 10px; }
+  .drop-zone h3 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+  .drop-zone p {
+    font-size: 12px;
+    color: var(--grey-400);
+  }
+  .file-selected {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: var(--teal-light);
+    border-radius: 8px;
+    border: 1px solid var(--teal);
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--teal-dark);
+    display: none;
+    text-align: left;
+    word-break: break-all;
+  }
+  .file-selected.visible { display: block; }
+
+  /* ── Run button ── */
+  .btn-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px 20px;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--teal);
+    color: var(--white);
+  }
+  .btn-primary:not(:disabled):hover { background: var(--teal-mid); }
+  .btn-export {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid #a7d8bb;
+  }
+  .btn-export:not(:disabled):hover { background: #d4eddf; }
+  .status-msg {
+    font-size: 13px;
+    color: var(--grey-400);
+    font-style: italic;
+  }
+
+  /* ── Stats ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+  }
+  .stat-cell {
+    padding: 20px 24px;
+    border-right: 1px solid var(--grey-200);
+    position: relative;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--grey-400);
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--grey-700);
+    line-height: 1;
+    font-family: var(--mono);
+    transition: color 0.3s;
+  }
+  .stat-cell.primary .stat-value {
+    color: var(--teal);
+    font-weight: 500;
+  }
+  .stat-cell.excluded .stat-value { color: var(--amber); }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--grey-400);
+    margin-top: 6px;
+  }
+  .stat-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--grey-200);
+  }
+  .oos-row {
+    display: flex;
+    align-items: center;
+    padding: 18px 24px;
+    background: var(--teal-pale);
+    gap: 16px;
+  }
+  .oos-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex: 1;
+  }
+  .oos-value {
+    font-size: 42px;
+    font-weight: 600;
+    color: var(--teal-dark);
+    font-family: var(--mono);
+    transition: all 0.4s;
+  }
+
+  /* ── Log panel ── */
+  .log-panel {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #0d1f24;
+    color: #8fbfc6;
+    padding: 16px 18px;
+    border-radius: 0 0 12px 12px;
+    min-height: 160px;
+    max-height: 320px;
+    overflow-y: auto;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .log-panel .log-head { color: #5ab4c0; font-weight: 500; }
+  .log-panel .log-ok   { color: #6fcf97; }
+  .log-panel .log-warn { color: #f2c94c; }
+  .log-panel .log-err  { color: #eb5757; }
+  .log-panel .log-dim  { color: #4a6b72; }
+
+  /* ── Footer note ── */
+  .notice {
+    font-size: 11px;
+    color: var(--grey-400);
+    text-align: center;
+    padding: 0 20px;
+    line-height: 1.6;
+  }
+  .notice strong { color: var(--amber); }
+
+  /* Scrollbar */
+  .log-panel::-webkit-scrollbar { width: 6px; }
+  .log-panel::-webkit-scrollbar-track { background: transparent; }
+  .log-panel::-webkit-scrollbar-thumb { background: #2a4a52; border-radius: 3px; }
+
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform:none; } }
+  .animate-in { animation: fadeIn 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">♬</div>
+  <div>
+    <h1>CALHN Music Therapy</h1>
+    <p>Occasions of Service Counter — EMR Export Tool</p>
+  </div>
+  <span class="header-badge">NIPAA-filtered</span>
+</header>
+
+<main>
+
+  <!-- File picker -->
+  <div class="card animate-in">
+    <div class="card-header">
+      <h2>📂 Select EMR Export</h2>
+    </div>
+    <div class="card-body">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+        <div class="drop-icon">📊</div>
+        <h3>Drop file here or click to browse</h3>
+        <p>Accepts: CSV &nbsp;·&nbsp; Excel (.xlsx / .xls)</p>
+      </div>
+      <div class="file-selected" id="fileLabel"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="runBtn" disabled onclick="runCount()">Count OoS</button>
+      <button class="btn btn-export" id="exportBtn" disabled onclick="exportCSV()">Export Clean CSV</button>
+      <span class="status-msg" id="statusMsg"></span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card animate-in" style="animation-delay:0.05s">
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-label">Total rows</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub">in export file</div>
+      </div>
+      <div class="stat-cell excluded">
+        <div class="stat-label">Excluded</div>
+        <div class="stat-value" id="statExcluded">—</div>
+        <div class="stat-sub">NIPAA / test records</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Net rows</div>
+        <div class="stat-value" id="statNet">—</div>
+        <div class="stat-sub">after exclusion</div>
+      </div>
+    </div>
+    <div class="oos-row">
+      <span class="oos-label">Occasions of Service (OoS)</span>
+      <span class="oos-value" id="statOoS">—</span>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card animate-in" style="animation-delay:0.10s">
+    <div class="card-header">
+      <h2>⚙ Column Detection &amp; Field Report</h2>
+    </div>
+    <div class="log-panel" id="logPanel">Waiting for file…</div>
+  </div>
+
+  <!-- Notice -->
+  <p class="notice">
+    <strong>⚠ Data notice:</strong> This tool processes data locally in your browser — nothing is uploaded or transmitted.
+    Verify any exported file is de-identified before sharing outside the CALHN ecosystem.
+    NIPAA exclusion uses name, DOB &lt;1900, and location keywords.
+  </p>
+
+</main>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const NIPAA_NAME_KEYWORDS     = ["AHDATA","NIPAA","TEST","DATA TWENTYSEVEN"];
+const NIPAA_LOCATION_KEYWORDS = ["DATA COLLECTION","NONPATIENT","NON-PATIENT","NONPATIENT"];
+const NIPAA_DOB_YEAR_BEFORE   = 1900;
+
+const NAME_CANDIDATES     = ["PATIENT NAME","NAME","PATIENT","SURNAME","FULL NAME","PATIENTNAME"];
+const DOB_CANDIDATES      = ["DOB","DATE OF BIRTH","BIRTH DATE","BIRTHDATE","DATE_OF_BIRTH"];
+const LOCATION_CANDIDATES = ["LOCATION","WARD","UNIT","CLINIC","ENCOUNTER LOCATION",
+                              "VISIT LOCATION","DEPARTMENT","FACILITY"];
+const HIGH_VALUE_KEYWORDS  = ["date","age","gender","sex","diagnosis","ward","unit",
+                              "referral","clinician","therapist","episode","admit",
+                              "discharge","type","atsi","indigenous","language",
+                              "postcode","category","site"];
+
+// ── State ───────────────────────────────────────────────────────────────────
+let rawData   = null;   // array of row objects
+let cleanData = null;
+let fileName  = "";
+
+// ── File input ──────────────────────────────────────────────────────────────
+const dropZone  = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+
+dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", ()  => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener("change", e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  fileName = file.name;
+  document.getElementById("fileLabel").textContent = "📄 " + fileName;
+  document.getElementById("fileLabel").classList.add("visible");
+  document.getElementById("runBtn").disabled = false;
+  document.getElementById("exportBtn").disabled = true;
+  setStatus("File loaded. Click Count OoS to process.");
+  rawData = null; cleanData = null;
+  resetStats();
+
+  const ext = file.name.split(".").pop().toLowerCase();
+  const reader = new FileReader();
+
+  if (ext === "csv") {
+    reader.onload = e => { rawData = parseCSV(e.target.result); };
+    reader.readAsText(file, "UTF-8");
+  } else if (ext === "xlsx" || ext === "xls") {
+    if (typeof XLSX === "undefined") {
+      setLog('<span class="log-err">Excel support requires internet access to load SheetJS.\n' +
+             'If SA Health network blocks CDNs, save your file as CSV and use that instead.\n' +
+             'CSV will always work offline.</span>');
+      document.getElementById("runBtn").disabled = true;
+      return;
+    }
+    reader.onload = e => {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rawData = XLSX.utils.sheet_to_json(ws, { defval: "" });
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    setLog('<span class="log-err">Unsupported file type. Use .csv, .xlsx, or .xls</span>');
+  }
+}
+
+// ── CSV parser (handles quoted fields, commas, newlines) ────────────────────
+function parseCSV(text) {
+  // Try tab first (some SA Health exports are tab-delimited)
+  const delim = text.split("\t").length > text.split(",").length ? "\t" : ",";
+  const lines  = text.split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = splitLine(lines[0], delim).map(h => h.trim().replace(/^"|"$/g,""));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = splitLine(line, delim);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || "").replace(/^"|"$/g,"").trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitLine(line, delim) {
+  const result = []; let cur = ""; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === delim && !inQ) { result.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// ── Column detection ─────────────────────────────────────────────────────────
+function detectColumns(rows) {
+  if (!rows || rows.length === 0) return {};
+  const keys = Object.keys(rows[0]);
+  const upper = {};
+  keys.forEach(k => upper[k.toUpperCase().trim()] = k);
+  const result = {};
+  for (const cand of NAME_CANDIDATES)     { if (upper[cand]) { result.name     = upper[cand]; break; } }
+  for (const cand of DOB_CANDIDATES)      { if (upper[cand]) { result.dob      = upper[cand]; break; } }
+  for (const cand of LOCATION_CANDIDATES) { if (upper[cand]) { result.location = upper[cand]; break; } }
+  return result;
+}
+
+// ── NIPAA filter ─────────────────────────────────────────────────────────────
+function isNIPAA(row, colMap) {
+  if (colMap.name) {
+    const name = String(row[colMap.name] || "").toUpperCase();
+    if (NIPAA_NAME_KEYWORDS.some(kw => name.includes(kw))) return true;
+  }
+  if (colMap.location) {
+    const loc = String(row[colMap.location] || "").toUpperCase();
+    if (NIPAA_LOCATION_KEYWORDS.some(kw => loc.includes(kw))) return true;
+  }
+  if (colMap.dob) {
+    const dobRaw = String(row[colMap.dob] || "");
+    const year = extractYear(dobRaw);
+    if (year && year < NIPAA_DOB_YEAR_BEFORE) return true;
+  }
+  return false;
+}
+
+function extractYear(str) {
+  // Handles dd-mm-yyyy, yyyy-mm-dd, mm/dd/yyyy, serial numbers
+  const m = str.match(/\b(1[5-9]\d{2}|20\d{2})\b/);
+  if (m) return parseInt(m[1]);
+  // Excel serial date (days since 1900-01-01)
+  const n = parseFloat(str);
+  if (!isNaN(n) && n > 1 && n < 73000) {
+    const d = new Date(Date.UTC(1899,11,30) + n * 86400000);
+    return d.getUTCFullYear();
+  }
+  return null;
+}
+
+// ── Main count ───────────────────────────────────────────────────────────────
+function runCount() {
+  if (!rawData) {
+    // File may still be reading; give it a tick
+    setTimeout(runCount, 200);
+    return;
+  }
+  setStatus("Processing…");
+  setTimeout(() => {
+    try {
+      const colMap   = detectColumns(rawData);
+      const excluded = rawData.filter(r => isNIPAA(r, colMap));
+      cleanData      = rawData.filter(r => !isNIPAA(r, colMap));
+
+      // Stats
+      document.getElementById("statTotal").textContent    = rawData.length.toLocaleString();
+      document.getElementById("statExcluded").textContent = excluded.length.toLocaleString();
+      document.getElementById("statNet").textContent      = cleanData.length.toLocaleString();
+      document.getElementById("statOoS").textContent      = cleanData.length.toLocaleString();
+
+      document.getElementById("exportBtn").disabled = false;
+      setStatus("Done.");
+      buildLog(rawData, colMap, excluded);
+    } catch(e) {
+      setStatus("Error: " + e.message);
+    }
+  }, 50);
+}
+
+// ── Log builder ──────────────────────────────────────────────────────────────
+function buildLog(rows, colMap, excluded) {
+  const allKeys = rows.length ? Object.keys(rows[0]) : [];
+  let html = "";
+
+  // Column detection
+  html += '<span class="log-head">── Column Detection ───────────────────────────────────────────\n</span>';
+  if (colMap.name)     html += `<span class="log-ok">  ✓  name      → "${colMap.name}"\n</span>`;
+  else                 html += '<span class="log-warn">  ⚠  name      → not detected\n</span>';
+  if (colMap.dob)      html += `<span class="log-ok">  ✓  dob       → "${colMap.dob}"\n</span>`;
+  else                 html += '<span class="log-warn">  ⚠  dob       → not detected\n</span>';
+  if (colMap.location) html += `<span class="log-ok">  ✓  location  → "${colMap.location}"\n</span>`;
+  else                 html += '<span class="log-warn">  ⚠  location  → not detected\n</span>';
+
+  // Excluded records
+  if (excluded.length > 0) {
+    html += `\n<span class="log-head">── Excluded Records (${excluded.length}) ──────────────────────────────────\n</span>`;
+    excluded.forEach(r => {
+      const name = colMap.name     ? r[colMap.name]     : "—";
+      const dob  = colMap.dob      ? r[colMap.dob]      : "—";
+      const loc  = colMap.location ? r[colMap.location] : "—";
+      html += `<span class="log-warn">  ${name} | DOB: ${dob} | ${loc}\n</span>`;
+    });
+  } else {
+    html += '\n<span class="log-dim">  No NIPAA/test records found.\n</span>';
+  }
+
+  // Fields report
+  html += `\n<span class="log-head">── Field Report (${allKeys.length} columns) ──────────────────────────────\n</span>`;
+
+  const highVal = allKeys.filter(k => HIGH_VALUE_KEYWORDS.some(kw => k.toLowerCase().includes(kw)));
+  const others  = allKeys.filter(k => !highVal.includes(k));
+
+  if (highVal.length) {
+    html += '<span class="log-ok">  ★ Potentially useful for data scraping:\n</span>';
+    highVal.forEach(k => {
+      const unique = [...new Set(rows.map(r => r[k]).filter(v => v !== ""))].length;
+      html += `<span class="log-ok">    ${k.padEnd(42)} ${unique} unique values\n</span>`;
+    });
+  }
+
+  html += '\n<span class="log-dim">  All columns:\n</span>';
+  allKeys.forEach(k => {
+    const filled = rows.filter(r => r[k] !== "" && r[k] !== null && r[k] !== undefined).length;
+    html += `<span class="log-dim">    ${k.padEnd(42)} ${filled} / ${rows.length} filled\n</span>`;
+  });
+
+  document.getElementById("logPanel").innerHTML = html;
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!cleanData || cleanData.length === 0) return;
+  const keys = Object.keys(cleanData[0]);
+  const lines = [keys.join(",")];
+  cleanData.forEach(row => {
+    lines.push(keys.map(k => {
+      const v = String(row[k] || "").replace(/"/g, '""');
+      return v.includes(",") || v.includes('"') ? `"${v}"` : v;
+    }).join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = fileName.replace(/\.(csv|xlsx|xls)$/i, "") + "_clean_OoS.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setStatus(msg) { document.getElementById("statusMsg").textContent = msg; }
+function setLog(html)   { document.getElementById("logPanel").innerHTML = html; }
+function resetStats() {
+  ["statTotal","statExcluded","statNet","statOoS"].forEach(id => {
+    document.getElementById(id).textContent = "—";
+  });
+}
+</script>
+</body>
+</html>
