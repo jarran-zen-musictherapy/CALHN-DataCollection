@@ -503,7 +503,6 @@
             return 0;
         });
         
-        // Removed "Session" text entirely for x-axis labels
         const labels = sorted.map((r, i) => `${i + 1}`);
         const data = sorted.map(r => r.change);
 
@@ -533,7 +532,6 @@
                     tooltip: {
                         ...TOOLTIP_OPTS,
                         callbacks: {
-                            // Added "Session" back into the tooltip title so hover is still clear
                             title: ctx => `Session ${ctx[0].label}`,
                             label: ctx => ` Change: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(1)}`,
                         },
@@ -546,9 +544,11 @@
                         ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 20 },
                     },
                     y: {
+                        min: -10, // Locks the bottom of the scale
+                        max: 10,  // Locks the top of the scale
                         title: { display: true, text: 'Mood Change', font: { size: 13, weight: 'bold' } },
                         grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { callback: v => (v >= 0 ? '+' : '') + v },
+                        ticks: { callback: v => (v >= 0 && v !== 0 ? '+' : '') + v },
                     },
                 },
             },
