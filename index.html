@@ -5,21 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Creative Therapies - Data Visualizations</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Keeping your original styles for consistency */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #E67E73 0%, #9B6B9E 50%, #4A9BC7 100%);
             min-height: 100vh;
             padding: 40px 20px;
         }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1100px; margin: 0 auto; }
         .header {
             background: white;
             padding: 40px;
@@ -27,150 +21,72 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             text-align: center;
         }
-        h1 {
-            color: #2c3e50;
-            font-size: 32px;
-            margin-bottom: 10px;
+        h1 { color: #2c3e50; font-size: 32px; margin-bottom: 10px; }
+        .subtitle { color: #7f8c8d; font-size: 16px; }
+        
+        .section-heading {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: white;
+            margin: 40px 0 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
         }
-        .subtitle {
-            color: #7f8c8d;
-            font-size: 16px;
-        }
+
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
-            margin-top: 20px;
         }
         .card {
             background: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 12px rgba(0,0,0,0.15); }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 8px; min-height: 50px; }
+        .card-description { font-size: 14px; color: #7f8c8d; line-height: 1.5; flex-grow: 1; margin-bottom: 15px; }
+        
+        /* Accents */
+        .card.music { border-left: 5px solid #9B6B9E; }
+        .card.art { border-left: 5px solid #5BA08A; }
+        .card.spiritual { border-left: 5px solid #4A9BC7; }
+        .card.affect { border-left: 5px solid #E67E73; }
+        .card.vas { border-left: 5px solid #f1c40f; }
+        .card.clinical { border-left: 5px solid #3fb950; }
+
+        .button-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
             cursor: pointer;
             text-decoration: none;
-            color: inherit;
-            display: block;
+            color: white;
+            transition: opacity 0.2s;
         }
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
-        }
-        .card-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .card-description {
-            font-size: 14px;
-            color: #7f8c8d;
-            line-height: 1.5;
-        }
-        .card.music-therapy {
-            border-left: 4px solid #9B6B9E;
-        }
-        .card.art-therapy {
-            border-left: 4px solid #5BA08A;
-        }
-        .card.spiritual-care {
-            border-left: 4px solid #4A9BC7;
-        }
-        .card.mood-tracker {
-            border-left: 4px solid #3fb950;
-        }
-        .card.mood-tracker-graph {
-            border-left: 4px solid #E67E73;
-        }
-        .card.affect-wheel {
-            border-left: 4px solid #9B6B9E;
-        }
-        .card.vas-tracker {
-            border-left: 4px solid #f1c40f;
-        }
-        .section-heading {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: rgba(255,255,255,0.6);
-            margin: 24px 0 10px;
-            padding-left: 2px;
-        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: #2c3e50; }
+        .btn-secondary { background: #95a5a6; }
+        .btn-special { background: #9B6B9E; }
 
         .footer {
             background: white;
             padding: 20px;
             border-radius: 0 0 12px 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            margin-top: 40px;
             text-align: center;
             color: #7f8c8d;
             font-size: 13px;
-        }
-        .badge {
-            display: inline-block;
-            background: rgba(155, 107, 158, 0.15);
-            color: #9B6B9E;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-        .button-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            color: white;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .btn-oos {
-            background: linear-gradient(135deg, rgba(155, 107, 158, 0.8), rgba(91, 160, 138, 0.8));
-        }
-        .music-therapy .btn-oos {
-            background: rgba(155, 107, 158, 0.8);
-        }
-        .art-therapy .btn-oos {
-            background: rgba(91, 160, 138, 0.8);
-        }
-        .mood-tracker-graph .btn-oos {
-            background: rgba(230, 126, 115, 0.8);
-        }
-        .mood-tracker .btn-oos {
-            background: rgba(63, 185, 80, 0.8);
-        }
-        .affect-wheel .btn-oos {
-            background: rgba(155, 107, 158, 0.8);
-        }
-        .vas-tracker .btn-oos {
-            background: rgba(241, 196, 15, 0.8);
-        }
-        .btn-pg {
-            background: rgba(149, 165, 166, 0.8);
-        }
-        .btn:active {
-            transform: translateY(0);
         }
     </style>
 </head>
@@ -178,99 +94,97 @@
     <div class="container">
         <div class="header">
             <h1>Creative Therapies</h1>
-            <p class="subtitle"> Reporting Dashboard</p>
+            <p class="subtitle">CALHN Reporting & Clinical Dashboard</p>
         </div>
 
-        <div class="section-heading">Data Visualisers</div>
+        <div class="section-heading">Service Data & Reporting</div>
         <div class="cards">
-            <!-- Music Therapy -->
-            <div class="card music-therapy">
+            <div class="card music">
                 <div class="card-icon">🎶</div>
-                <div class="card-title">Music Therapy <br>
-                   2025 | 2026 </div>
-                <div class="card-description">
-                    Interactive visualisation showing the breakdown of new patient sessions versus review sessions. Includes time period selector (2025/2026/All Time/ THRF Reporting Periods) and PDF/PNG export.
-                </div>
+                <div class="card-title">Music Therapy Service Data</div>
+                <div class="card-description">Comprehensive breakdown of Occasions of Service (OoS) and Priority Group tracking for 2025-2026.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='graphs/music_therapy_oos_graph.html';">Occasions of Service</button>
-                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/music-therapy-priority-groups.html';">Priority Groups</button>
+                    <button class="btn btn-primary" onclick="window.location.href='graphs/music_therapy_oos_graph.html';">OoS Graph</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='Priority Group/music-therapy-priority-groups.html';">Priority Groups</button>
                 </div>
             </div>
 
-            <!-- Spiritual Care - Commented out for now
-            <a href="graphs\spiritual_care_oos_graph.html" class="card spiritual-care">
-                <div class="card-icon">🕊️</div>
-                <div class="card-title">Spiritual Care <br>
-                    2024 | 2025 | 2026 </div>
-                <div class="card-description">
-                    Interactive visualization showing the breakdown of new patient sessions versus review sessions for Spiritual Care. Includes time period selector (2024/2025/2026/All Time) and PNG export.
-                </div>
-                <span class="badge">Explore</span>
-            </a>
-            -->
-
-            <!-- Art Therapy -->
-            <div class="card art-therapy">
+            <div class="card art">
                 <div class="card-icon">🎨</div>
-                <div class="card-title">Art Therapy <br>
-                     2025 | 2026 </div>
-                <div class="card-description">
-                    Interactive visualisation showing the breakdown of new patient sessions versus review sessions for Art Therapy. Includes time period selector (2025/2026/All Time/THRF reporting Periods) and PDF/PNG export.
-                </div>
+                <div class="card-title">Art Therapy Service Data</div>
+                <div class="card-description">Visualisation of Art Therapy patient reach, session volume, and priority group distributions.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='graphs/art_therapy_oos_graph.html';">Occasions of Service</button>
-                    <button class="btn btn-pg" onclick="window.location.href='Priority Group/art-therapy-priority-groups.html';">Priority Groups</button>
+                    <button class="btn btn-primary" onclick="window.location.href='graphs/art_therapy_oos_graph.html';">OoS Graph</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='Priority Group/art-therapy-priority-groups.html';">Priority Groups</button>
                 </div>
             </div>
 
-            <!-- MT Mood Tracker Graph -->
-            <div class="card mood-tracker-graph">
+         <div class="card spiritual">
+                <div class="card-icon">🕊️</div>
+                <div class="card-title">Spiritual Care Service Data</div>
+                <div class="card-description">Reporting on Spiritual Care OoS metrics and patient interactions across the network.</div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="window.location.href='graphs/spiritual_care_oos_graph.html';">OoS Graph</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-heading">Visualisation Tool Data</div>
+        <div class="cards">
+            <div class="card clinical">
                 <div class="card-icon">📊</div>
                 <div class="card-title">MT Mood Tracker<br>Pre/Post Analysis</div>
-                <div class="card-description">
-                    Clinician observed mood score analysis across Music Therapy sessions. Charts average scores, trend over time, and score distributions.
-                </div>
+                <div class="card-description">Visualises clinician-observed mood score trends, average improvements, and score distributions.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='graphs/mood_tracker_graph.html';">View Data</button>
+                    <button class="btn btn-special" onclick="window.location.href='graphs/mood_tracker_graph.html';">View Analysis</button>
+                </div>
+            </div>
+
+            <div class="card affect">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">Affect Tracker<br>Data Visualiser</div>
+                <div class="card-description">Aggregated data analysis from the Affect Wheel tool, showing emotional shifts over time.</div>
+                <div class="button-group">
+                    <button class="btn btn-special" onclick="window.location.href='graphs/Affect_Tracker_Visualiser.html';">View Analysis</button>
+                </div>
+            </div>
+
+            <div class="card vas">
+                <div class="card-icon">😊</div>
+                <div class="card-title">VAS Tracker<br>Data Visualiser</div>
+                <div class="card-description">Trends and analytics for the Visual Analog Scale mood checks across patient cohorts.</div>
+                <div class="button-group">
+                    <button class="btn btn-special" onclick="window.location.href='graphs/VAS_Tracker_Visulatiser.html';">View Analysis</button>
                 </div>
             </div>
         </div>
 
-        <div class="section-heading">Clinical Tools</div>
+        <div class="section-heading">Clinical Data Entry Tools</div>
         <div class="cards">
-            <!-- Clinician Observed Changes -->
-            <div class="card mood-tracker">
+            <div class="card clinical">
                 <div class="card-icon">♬</div>
-                <div class="card-title">Clinician Observed Changes<br>Mood Tracker</div>
-                <div class="card-description">
-                    Log pre/post observed mood scores for MT sessions. Saves locally with optional Google Sheets sync.
-                </div>
+                <div class="card-title">Mood Tracker Entry</div>
+                <div class="card-description">Clinician portal for logging pre/post session observed mood scores.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='Apps/i-had-a-session.html';">Open Tool</button>
+                    <button class="btn btn-primary" onclick="window.location.href='Apps/i-had-a-session.html';">Open Tool</button>
                 </div>
             </div>
 
-            <!-- Affect Wheel -->
-            <div class="card affect-wheel">
-                <div class="card-icon">🧠</div>
+            <div class="card affect">
+                <div class="card-icon">🎡</div>
                 <div class="card-title">Affect Wheel</div>
-                <div class="card-description">
-                    Capture pre/post emotional state using an interactive 16-segment emotion wheel. Measure intensity and track emotional shifts across therapy sessions.
-                </div>
+                <div class="card-description">Interactive tool for patients to select emotional states from the 16-segment wheel.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='Apps/Affect_Wheel.html';">Open Tool</button>
+                    <button class="btn btn-primary" onclick="window.location.href='Apps/Affect_Wheel.html';">Open Tool</button>
                 </div>
             </div>
 
-            <!-- VAS Tracker -->
-            <div class="card vas-tracker">
-                <div class="card-icon">😊</div>
-                <div class="card-title">Visual Analog Scale<br>Quick Mood Check</div>
-                <div class="card-description">
-                    Quick pre/post mood assessment using a 7-point visual analog scale with animated smiley faces. Perfect for time-constrained sessions.
-                </div>
+            <div class="card vas">
+                <div class="card-icon">📏</div>
+                <div class="card-title">VAS Mood Check</div>
+                <div class="card-description">7-point visual analog scale for rapid bedside mood assessment.</div>
                 <div class="button-group">
-                    <button class="btn btn-oos" onclick="window.location.href='Apps/VAS-tracker.html';">Open Tool</button>
+                    <button class="btn btn-primary" onclick="window.location.href='Apps/VAS-tracker.html';">Open Tool</button>
                 </div>
             </div>
         </div>
