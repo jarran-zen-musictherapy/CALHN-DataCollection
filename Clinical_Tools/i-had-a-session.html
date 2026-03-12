@@ -1,885 +1,528 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0d1117" />
-<link rel="manifest" href="/CALHN-DataCollection/manifest.json" />
-<link rel="apple-touch-icon" href="/CALHN-DataCollection/icon-192.png" />
-<title>I Had a Session — CALHN MT</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Music Therapy — Mood</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #FAFAF8; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #1E293B; }
+  
+  /* ── Header & Animated Slider ── */
+  #header { width: 100%; background: #fff; border-bottom: 1px solid #E2E8F0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  #header-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #2E8B57, #3fb950); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; flex-shrink: 0; }
+  #header-title { font-weight: 700; font-size: 15px; color: #1E293B; letter-spacing: -0.02em; line-height: 1.2;}
+  #header-sub { font-size: 10px; color: #94A3B8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;}
+  
+  /* The Slider Toggle */
+  .toggle-container { position: relative; display: flex; background: #F1F5F9; border-radius: 30px; padding: 4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04); }
+  .toggle-bg { position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px); background: #fff; border-radius: 26px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .toggle-container[data-active="log"] .toggle-bg { transform: translateX(100%); }
+  
+  .toggle-btn { position: relative; z-index: 1; flex: 1; border: none; background: transparent; padding: 6px 16px; font-size: 12px; font-weight: 600; color: #64748B; cursor: pointer; transition: color 0.3s; display: flex; align-items: center; gap: 6px; justify-content: center;}
+  .toggle-btn.active { color: #1E293B; }
+  
+  .badge { background: #94A3B8; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; transition: background 0.3s; }
+  .badge.has-data { background: #2E8B57; }
 
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #21262d;
-    --border2: #30363d;
-    --muted: #484f58;
-    --subtle: #8b949e;
-    --text: #c9d1d9;
-    --bright: #e6edf3;
-    --blue: #388bfd;
-    --blue-bg: #1f2d3d;
-    --green: #3fb950;
-    --green-dark: #238636;
-    --green-mid: #1a7f37;
-    --yellow: #d29922;
-    --red: #f85149;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --mono: 'DM Mono', monospace;
-  }
-
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  button {
-    font-family: var(--font);
-    cursor: pointer;
-    transition: all 0.12s ease;
-  }
-  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-
-  input {
-    font-family: var(--font);
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 11px 14px;
-    color: var(--text);
-    font-size: 13px;
-    width: 100%;
-  }
-  input:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
-
-  [data-theme="light"] {
-    --bg: #f6f8fa;
-    --surface: #ffffff;
-    --border: #d0d7de;
-    --border2: #c6cdd5;
-    --muted: #8c959f;
-    --subtle: #57606a;
-    --text: #24292f;
-    --bright: #1f2328;
-    --blue: #0969da;
-    --blue-bg: #ddf4ff;
-    --green: #1a7f37;
-    --green-dark: #116329;
-    --green-mid: #1a7f37;
-    --yellow: #9a6700;
-    --red: #cf222e;
-  }
-
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulseDot {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
-  .fade-up { animation: fadeUp 0.2s ease forwards; }
-
-  /* ── Layout ── */
-  #app { display: flex; flex-direction: column; min-height: 100vh; }
-
-  /* ── Header ── */
-  #header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  #header-icon {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, #238636, #3fb950);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; flex-shrink: 0;
-  }
-  #header-title { font-weight: 700; font-size: 15px; color: var(--bright); letter-spacing: -0.02em; }
-  #header-sub   { font-size: 11px; color: var(--subtle); margin-top: 1px; }
-  #theme-toggle {
-    margin-left: 8px;
-    background: transparent;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 6px 10px;
-    color: var(--subtle);
-    font-size: 16px;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-  #theme-toggle:hover { border-color: var(--blue); color: var(--bright); }
-  #tab-bar {
-    margin-left: auto;
-    display: flex;
-    gap: 4px;
-    background: var(--bg);
-    padding: 4px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-  }
-  .tab-btn {
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 14px;
-    color: var(--subtle);
-    font-size: 12px;
-    font-weight: 400;
-  }
-  .tab-btn.active {
-    background: var(--border);
-    color: var(--bright);
-    font-weight: 600;
-  }
-
-  /* ── Main content ── */
-  #main { flex: 1; padding: 24px 20px 40px; max-width: 520px; margin: 0 auto; width: 100%; }
-
-  /* ── Views ── */
-  .view { display: none; }
+  /* ── Layouts ── */
+  #app-content { width: 100%; max-width: 500px; padding: 24px 20px; flex: 1; display: flex; flex-direction: column; }
+  .view { display: none; width: 100%; animation: fadeUp 0.3s ease; }
   .view.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* ── Mode toggle ── */
-  .mode-toggle { display: flex; gap: 8px; margin-bottom: 28px; }
-  .mode-btn {
-    flex: 1;
-    background: transparent;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 10px;
-    color: var(--subtle);
-    font-size: 13px;
-    font-weight: 400;
-  }
-  .mode-btn.active {
-    background: var(--blue-bg);
-    border-color: var(--blue);
-    color: var(--blue);
-    font-weight: 600;
-  }
+  /* ── Form View Styles ── */
+  .main-title-area { text-align: center; margin-bottom: 28px; }
+  .main-title { font-size: 26px; font-weight: 700; color: #1E293B; letter-spacing: -0.02em; }
 
-  /* ── Section label ── */
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--subtle);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
+  .row-container { text-align: center; margin-bottom: 16px; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); opacity: 0; transform: translateY(24px); pointer-events: none; }
+  .row-container.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .row-label { font-size: 12px; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  
+  .faces-wrapper { display: flex; justify-content: center; gap: 6px; }
+  .face-btn { background: none; border: none; cursor: pointer; padding: 0; outline: none; transition: transform 0.15s ease, opacity 0.15s ease; width: 45px; height: 45px; }
+  .face-btn:hover { transform: scale(1.1); }
+  .face-btn.selected { transform: scale(1.25); }
+  .face-btn.muted { opacity: 0.3; }
 
-  /* ── Score grid ── */
-  .score-section { margin-bottom: 28px; }
-  .score-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  .score-btn {
-    aspect-ratio: 1;
-    border-radius: 10px;
-    border: 2px solid var(--border2);
-    background: transparent;
-    color: var(--subtle);
-    font-size: 17px;
-    font-weight: 400;
-    width: 100%;
-  }
-  .score-btn:hover { border-color: var(--blue) !important; color: var(--bright) !important; transform: translateY(-1px); }
-  .score-anchor {
-    font-size: 13px;
-    font-style: italic;
-    min-height: 20px;
-    transition: color 0.15s;
-  }
+  .notes-container { width: 100%; margin-top: 24px; transition: all 0.4s ease; opacity: 0; transform: translateY(16px); pointer-events: none; }
+  .notes-container.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .notes-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; font-size: 14px; outline: none; resize: none; font-family: inherit; background: #fff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);}
+  .notes-input:focus { border-color: #2E8B57; }
+  
+  .submit-btn-container { text-align: center; margin-top: 24px; transition: all 0.35s ease; opacity: 0; pointer-events: none; }
+  .submit-btn-container.visible { opacity: 1; pointer-events: auto; }
+  .submit-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: #2E8B57; color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(46,139,87,0.25); transition: background 0.2s, transform 0.1s; }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { background: #94A3B8; cursor: not-allowed; box-shadow: none; transform: none; }
 
-  /* ── Delta card ── */
-  #delta-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 20px;
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-  }
-  #delta-card.visible { display: flex; }
-  .delta-col { text-align: center; }
-  .delta-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .delta-val   { font-size: 26px; font-weight: 700; }
-  .delta-arrow { color: var(--muted); font-size: 18px; }
-  .delta-change-col { text-align: right; }
+  /* ── Success Card ── */
+  #success-screen { display: none; text-align: center; }
+  .success-card { background: #fff; border-radius: 24px; padding: 40px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: inline-block; width: 100%; max-width: 400px; }
+  .success-title { margin-bottom: 24px; color: #2E8B57; font-size: 24px; }
+  .result-flex { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 28px; }
+  .result-col { display: flex; flex-direction: column; align-items: center; }
+  .result-label { font-size: 11px; color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .arrow { font-size: 26px; color: #CBD5E1; }
+  .change-box { padding: 10px 20px; border-radius: 14px; margin: 0 auto 24px; display: inline-block; }
+  .change-val { font-size: 32px; font-weight: 700; line-height: 1; margin-top: 4px; }
+  .new-btn { width: 100%; padding: 16px; border-radius: 14px; border: 2px solid #E2E8F0; background: #fff; color: #475569; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;}
+  .new-btn:hover { background: #F8FAFC; }
 
-  /* ── Note input ── */
-  .note-section { margin-bottom: 20px; }
-  .note-sublabel { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+  /* ── Log View Styles ── */
+  #summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .stat-val { font-size: 20px; font-weight: 700; color: #1E293B; }
+  .stat-label { font-size: 10px; color: #64748B; margin-top: 4px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;}
 
-  /* ── Save button ── */
-  #save-btn {
-    width: 100%;
-    border-radius: 10px;
-    padding: 16px;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    border: 1px solid var(--border2);
-    background: var(--surface);
-    color: var(--muted);
-  }
-  #save-btn.ready {
-    background: var(--green-mid);
-    border-color: #2ea043;
-    color: #fff;
-  }
-  #save-btn.ready:hover { background: #1f6feb; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(56,139,253,0.25); }
-  #save-btn.saved {
-    background: var(--green-dark);
-    border-color: var(--green);
-    color: #fff;
-  }
-
-  /* ── Retro date ── */
-  #retro-date-section { display: none; margin-bottom: 24px; }
-  #retro-date-section.visible { display: block; }
-
-  /* ── Scale reference ── */
-  #scale-ref {
-    margin-top: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-  }
-  #scale-ref .section-label { margin-bottom: 10px; color: var(--muted); }
-  .ref-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 20px;
-  }
-  .ref-row { display: flex; gap: 8px; align-items: baseline; }
-  .ref-num  { font-size: 12px; font-weight: 700; min-width: 14px; }
-  .ref-text { font-size: 11px; color: var(--subtle); }
-
-  /* ── Log view ── */
-  #summary-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 10px;
-    text-align: center;
-  }
-  .stat-val   { font-size: 20px; font-weight: 700; color: var(--bright); }
-  .stat-label { font-size: 11px; color: var(--subtle); margin-top: 2px; }
-
-  #session-list { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; margin-bottom: 16px; }
-  .session-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  #session-list { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; margin-bottom: 16px; padding-bottom: 10px;}
+  .session-row { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
   .session-meta { flex: 1; }
-  .session-date { font-size: 12px; color: var(--muted); }
-  .session-note { font-size: 12px; color: var(--subtle); margin-top: 3px; font-style: italic; }
-  .session-scores { display: flex; gap: 8px; align-items: center; }
-  .session-score { font-size: 14px; font-weight: 600; }
-  .session-arrow { color: var(--muted); font-size: 12px; }
-  .session-delta { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+  .session-date { font-size: 12px; color: #94A3B8; font-weight: 600;}
+  .session-note { font-size: 13px; color: #475569; margin-top: 4px; font-style: italic; line-height: 1.4; }
+  .session-scores { display: flex; gap: 8px; align-items: center; background: #F8FAFC; padding: 6px 10px; border-radius: 10px;}
+  .session-score { font-size: 15px; font-weight: 700; }
+  .session-arrow { color: #CBD5E1; font-size: 14px; }
+  .session-delta { font-size: 15px; font-weight: 700; min-width: 24px; text-align: right; }
 
-  #log-actions { display: flex; gap: 8px; }
-  #export-btn {
-    flex: 1;
-    background: #1f6feb;
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  #export-btn:hover { background: #388bfd; }
-  #clear-btn, #confirm-clear-btn, #cancel-clear-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 12px 16px;
-    color: var(--subtle);
-    font-size: 13px;
-  }
-  #confirm-clear-btn {
-    background: color-mix(in srgb, var(--red) 12%, transparent);
-    border-color: var(--red);
-    color: var(--red);
-    display: none;
-  }
-  #cancel-clear-btn { display: none; }
+  #log-actions { display: flex; gap: 8px; margin-top: 20px;}
+  .action-btn { flex: 1; border: none; border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  #export-btn { background: #1E293B; color: #fff; box-shadow: 0 4px 10px rgba(30,41,59,0.2); }
+  #export-btn:active { transform: scale(0.98); }
+  
+  #clear-btn { background: #fff; color: #DC2626; border: 2px solid #FECACA; }
+  #confirm-clear-btn { background: #DC2626; color: white; display: none; box-shadow: 0 4px 10px rgba(220,38,38,0.2); }
+  #cancel-clear-btn { background: #F1F5F9; color: #475569; display: none; }
 
-  #empty-log {
-    text-align: center;
-    color: var(--muted);
-    padding: 60px 20px;
-    font-size: 14px;
-    display: none;
-  }
-
-  /* ── Sync status ── */
-  #sync-status {
-    font-size: 12px;
-    margin-top: 10px;
-    min-height: 18px;
-    color: var(--subtle);
-    text-align: center;
-    display: none;
-  }
+  #empty-log { text-align: center; color: #94A3B8; padding: 60px 20px; font-size: 14px; display: none; background: #fff; border-radius: 14px; border: 2px dashed #E2E8F0;}
+  #sync-status { font-size: 12px; margin-top: 12px; min-height: 18px; color: #94A3B8; text-align: center; display: none; font-weight: 600; }
 </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- Header -->
-  <div id="header">
+<div id="header">
+  <div class="header-left">
     <div id="header-icon">♬</div>
     <div>
-      <div id="header-title">I had a session…</div>
-      <div id="header-sub">Observed Mood · CALHN MT</div>
-    </div>
-    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
-    <div id="tab-bar">
-      <button class="tab-btn active" id="tab-entry" onclick="switchTab('entry')">New Entry</button>
-      <button class="tab-btn" id="tab-log" onclick="switchTab('log')">Log (0)</button>
+      <div id="header-title">Music Therapy</div>
+      <div id="header-sub">Mood Tracker</div>
     </div>
   </div>
+  
+  <div class="toggle-container" id="tab-slider" data-active="entry">
+    <div class="toggle-bg"></div>
+    <button class="toggle-btn active" id="tab-entry" onclick="switchTab('entry')">Tracker</button>
+    <button class="toggle-btn" id="tab-log" onclick="switchTab('log')">
+      Log <span id="log-badge" class="badge">0</span>
+    </button>
+  </div>
+</div>
 
-  <!-- Main -->
-  <div id="main">
-
-    <!-- ── ENTRY VIEW ── -->
-    <div id="view-entry" class="view active">
-
-      <!-- Mode toggle -->
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-live" onclick="setMode('live')">Live session</button>
-        <button class="mode-btn" id="mode-retro" onclick="setMode('retro')">Retrospective</button>
+<div id="app-content">
+  
+  <div id="view-entry" class="view active">
+    
+    <div id="form-screen">
+      <div class="main-title-area">
+        <h1 class="main-title">How are you feeling?</h1>
       </div>
 
-      <!-- Retro date -->
-      <div id="retro-date-section">
-        <div class="section-label">Session Date &amp; Time</div>
-        <input type="datetime-local" id="retro-date" />
+      <div class="row-container visible" id="pre-row">
+        <div class="row-label">Before Session</div>
+        <div class="faces-wrapper" id="pre-faces"></div>
       </div>
 
-      <!-- Pre score -->
-      <div class="score-section" id="pre-section">
-        <div class="section-label">Observed Mood — Pre</div>
-        <div class="score-grid" id="pre-grid"></div>
-        <div class="score-anchor" id="pre-anchor"></div>
+      <div class="row-container" id="post-row">
+        <div class="row-label">After Session</div>
+        <div class="faces-wrapper" id="post-faces"></div>
       </div>
 
-      <!-- Post score -->
-      <div class="score-section" id="post-section">
-        <div class="section-label">Observed Mood — Post</div>
-        <div class="score-grid" id="post-grid"></div>
-        <div class="score-anchor" id="post-anchor"></div>
+      <div class="notes-container" id="notes-row">
+        <div class="row-label">Notes / Feedback</div>
+        <textarea id="notes-input" class="notes-input" rows="2" placeholder="Optional session notes..."></textarea>
       </div>
 
-      <!-- Delta preview -->
-      <div id="delta-card">
-        <div class="delta-col">
-          <div class="delta-label">PRE</div>
-          <div class="delta-val" id="delta-pre">—</div>
-        </div>
-        <div class="delta-arrow">→</div>
-        <div class="delta-col">
-          <div class="delta-label">POST</div>
-          <div class="delta-val" id="delta-post">—</div>
-        </div>
-        <div class="delta-change-col">
-          <div class="delta-label">CHANGE</div>
-          <div class="delta-val" id="delta-change">—</div>
-        </div>
+      <div class="submit-btn-container" id="submit-row">
+        <button class="submit-btn" id="submit-btn" onclick="submitData()">Save Session</button>
+        <div id="sync-status"></div>
       </div>
-
-      <!-- Note -->
-      <div class="note-section">
-        <div class="section-label">Note <span class="note-sublabel">(optional)</span></div>
-        <input type="text" id="note-input" placeholder="Ward, initials, intervention type…" maxlength="120" />
-      </div>
-
-      <!-- Save -->
-      <button id="save-btn" onclick="saveSession()" disabled>Log this session</button>
-      <div id="sync-status"></div>
-
-      <!-- Scale ref -->
-      <div id="scale-ref">
-        <div class="section-label">Scale Reference</div>
-        <div class="ref-grid" id="ref-grid"></div>
-      </div>
-
-    </div><!-- /view-entry -->
-
-    <!-- ── LOG VIEW ── -->
-    <div id="view-log" class="view">
-      <div id="summary-strip"></div>
-      <div id="empty-log">No sessions logged yet.</div>
-      <div id="session-list"></div>
-      <div id="log-actions">
-        <button id="export-btn" onclick="exportCSV()">Export CSV</button>
-        <button id="clear-btn" onclick="startClear()">Clear all</button>
-        <button id="confirm-clear-btn" onclick="confirmClear()">Confirm clear</button>
-        <button id="cancel-clear-btn" onclick="cancelClear()">Cancel</button>
-      </div>
-    </div><!-- /view-log -->
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<script>
-// ── Theme ─────────────────────────────────────────────────────────────────────
-
-(function () {
-  const saved = localStorage.getItem('calhn_theme');
-  if (saved === 'light') {
-    document.documentElement.dataset.theme = 'light';
-  }
-})();
-
-function toggleTheme() {
-  const html = document.documentElement;
-  const isLight = html.dataset.theme === 'light';
-  if (isLight) {
-    delete html.dataset.theme;
-    localStorage.setItem('calhn_theme', 'dark');
-    document.getElementById('theme-toggle').textContent = '☀';
-    document.querySelector('meta[name="theme-color"]').content = '#0d1117';
-  } else {
-    html.dataset.theme = 'light';
-    localStorage.setItem('calhn_theme', 'light');
-    document.getElementById('theme-toggle').textContent = '🌙';
-    document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
-  }
-}
-
-// Sync toggle icon on page load
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('theme-toggle');
-  if (document.documentElement.dataset.theme === 'light') {
-    btn.textContent = '🌙';
-    document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
-  }
-});
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "calhn_mood_sessions";
-const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzKGePGvXLXnzIxw2m5X23-zdmwNs5mUgBOpRaeSej-zIfVO9v46ovg6jg722y4_D0J/exec"; // Paste your Google Apps Script URL here
-
-const ANCHORS = {
-  1:  "Severely distressed",
-  2:  "Markedly distressed",
-  3:  "Distressed",
-  4:  "Mildly distressed",
-  5:  "Neutral / flat",
-  6:  "Settled",
-  7:  "Engaged",
-  8:  "Positive",
-  9:  "Noticeably elevated",
-  10: "Bright / animated",
-};
-
-function scoreColor(n) {
-  if (n <= 3) return { main: "#f85149", bg: "rgba(248,81,73,0.12)" };
-  if (n <= 5) return { main: "#d29922", bg: "rgba(210,153,34,0.12)" };
-  if (n <= 7) return { main: "#3fb950", bg: "rgba(63,185,80,0.12)" };
-  return       { main: "#58a6ff", bg: "rgba(88,166,255,0.12)" };
-}
-
-// ── State ─────────────────────────────────────────────────────────────────────
-
-let state = {
-  view:    "entry",
-  mode:    "live",
-  pre:     null,
-  post:    null,
-  sessions: [],
-};
-
-function loadSessions() {
-  try { state.sessions = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-  catch { state.sessions = []; }
-}
-
-function persistSessions() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
-}
-
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-
-function switchTab(tab) {
-  state.view = tab;
-  document.getElementById("view-entry").classList.toggle("active", tab === "entry");
-  document.getElementById("view-log").classList.toggle("active",   tab === "log");
-  document.getElementById("tab-entry").classList.toggle("active",  tab === "entry");
-  document.getElementById("tab-log").classList.toggle("active",    tab === "log");
-  if (tab === "log") renderLog();
-}
-
-// ── Mode ──────────────────────────────────────────────────────────────────────
-
-function setMode(m) {
-  state.mode = m;
-  document.getElementById("mode-live").classList.toggle("active",  m === "live");
-  document.getElementById("mode-retro").classList.toggle("active", m === "retro");
-  document.getElementById("retro-date-section").classList.toggle("visible", m === "retro");
-}
-
-// ── Score pickers ─────────────────────────────────────────────────────────────
-
-function buildGrid(id, type) {
-  const grid = document.getElementById(id);
-  grid.innerHTML = "";
-  for (let n = 1; n <= 10; n++) {
-    const btn = document.createElement("button");
-    btn.className = "score-btn";
-    btn.textContent = n;
-    btn.dataset.n = n;
-    btn.onclick = () => selectScore(type, n);
-    grid.appendChild(btn);
-  }
-}
-
-function selectScore(type, n) {
-  state[type] = n;
-  const gridId  = type === "pre" ? "pre-grid"   : "post-grid";
-  const anchorId = type === "pre" ? "pre-anchor" : "post-anchor";
-  const grid = document.getElementById(gridId);
-  const c = scoreColor(n);
-
-  grid.querySelectorAll(".score-btn").forEach(btn => {
-    const bn = Number(btn.dataset.n);
-    const sel = bn === n;
-    const bc = scoreColor(bn);
-    btn.style.border      = sel ? `2px solid ${bc.main}` : "2px solid var(--border2)";
-    btn.style.background  = sel ? bc.bg : "transparent";
-    btn.style.color       = sel ? bc.main : "var(--subtle)";
-    btn.style.fontWeight  = sel ? "700" : "400";
-  });
-
-  const anchor = document.getElementById(anchorId);
-  anchor.textContent = `${n} — ${ANCHORS[n]}`;
-  anchor.style.color = c.main;
-
-  updateDelta();
-  updateSaveBtn();
-}
-
-// ── Delta ─────────────────────────────────────────────────────────────────────
-
-function updateDelta() {
-  const card = document.getElementById("delta-card");
-  if (!state.pre || !state.post) { card.classList.remove("visible"); return; }
-
-  const delta = state.post - state.pre;
-  const sign  = delta > 0 ? "+" : "";
-  const dColor = delta > 0 ? "#3fb950" : delta < 0 ? "#f85149" : "var(--subtle)";
-
-  card.classList.add("visible");
-  const preEl  = document.getElementById("delta-pre");
-  const postEl = document.getElementById("delta-post");
-  const chEl   = document.getElementById("delta-change");
-  const cp = scoreColor(state.pre);
-  const cp2 = scoreColor(state.post);
-
-  preEl.textContent  = state.pre;
-  preEl.style.color  = cp.main;
-  postEl.textContent = state.post;
-  postEl.style.color = cp2.main;
-  chEl.textContent   = `${sign}${delta}`;
-  chEl.style.color   = dColor;
-}
-
-// ── Save button state ─────────────────────────────────────────────────────────
-
-function updateSaveBtn() {
-  const btn = document.getElementById("save-btn");
-  const ready = state.pre !== null && state.post !== null;
-  btn.disabled = !ready;
-  btn.classList.toggle("ready", ready);
-  btn.classList.remove("saved");
-  btn.textContent = "Log this session";
-}
-
-// ── Save session ──────────────────────────────────────────────────────────────
-
-async function saveSession() {
-  if (!state.pre || !state.post) return;
-
-  const note = document.getElementById("note-input").value.trim();
-  const retroVal = document.getElementById("retro-date").value;
-  const date = state.mode === "retro" && retroVal
-    ? new Date(retroVal).toISOString()
-    : new Date().toISOString();
-
-  const session = { pre: state.pre, post: state.post, note, date, mode: state.mode };
-
-  // Save locally
-  state.sessions.push(session);
-  persistSessions();
-
-  // Update UI immediately
-  const btn = document.getElementById("save-btn");
-  btn.classList.remove("ready");
-  btn.classList.add("saved");
-  btn.textContent = "✓ Session saved";
-  btn.disabled = true;
-
-  // Update tab count
-  document.getElementById("tab-log").textContent = `Log (${state.sessions.length})`;
-
-  // Reset fields
-  state.pre = null;
-  state.post = null;
-  document.getElementById("note-input").value = "";
-  document.getElementById("pre-grid").querySelectorAll(".score-btn").forEach(resetBtn);
-  document.getElementById("post-grid").querySelectorAll(".score-btn").forEach(resetBtn);
-  document.getElementById("pre-anchor").textContent = "";
-  document.getElementById("post-anchor").textContent = "";
-  document.getElementById("delta-card").classList.remove("visible");
-
-  // Reset after delay
-  setTimeout(() => {
-    btn.classList.remove("saved");
-    btn.disabled = true;
-    btn.textContent = "Log this session";
-  }, 2200);
-
-  // Sync to Google Sheets
-  await syncToSheets(session);
-}
-
-function resetBtn(btn) {
-  btn.style.border = "2px solid var(--border2)";
-  btn.style.background = "transparent";
-  btn.style.color = "var(--subtle)";
-  btn.style.fontWeight = "400";
-}
-
-// ── Google Sheets sync ────────────────────────────────────────────────────────
-
-async function syncToSheets(session) {
-  const status = document.getElementById("sync-status");
-  if (!SHEETS_URL) return;
-
-  status.style.display = "block";
-  status.style.color = "var(--subtle)";
-  status.textContent = "Syncing…";
-
-  try {
-    await fetch(SHEETS_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(session),
-    });
-    status.style.color = "var(--green)";
-    status.textContent = "✓ Synced to sheet";
-  } catch {
-    status.style.color = "var(--yellow)";
-    status.textContent = "⚠ Saved locally — sync failed";
-  }
-
-  setTimeout(() => { status.style.display = "none"; }, 3000);
-}
-
-// ── Log view ──────────────────────────────────────────────────────────────────
-
-function renderLog() {
-  const sessions = state.sessions;
-  const empty   = document.getElementById("empty-log");
-  const list    = document.getElementById("session-list");
-  const strip   = document.getElementById("summary-strip");
-
-  if (sessions.length === 0) {
-    empty.style.display = "block";
-    list.innerHTML = "";
-    strip.innerHTML = "";
-    return;
-  }
-
-  empty.style.display = "none";
-
-  // Summary stats
-  const pres    = sessions.map(s => s.pre);
-  const posts   = sessions.map(s => s.post);
-  const deltas  = sessions.map(s => s.post - s.pre);
-  const avg     = arr => (arr.reduce((a,b) => a+b,0) / arr.length).toFixed(1);
-  const improved = deltas.filter(d => d > 0).length;
-
-  strip.innerHTML = [
-    { label: "Sessions", val: sessions.length },
-    { label: "Avg Pre",  val: avg(pres) },
-    { label: "Avg Post", val: avg(posts) },
-    { label: "Improved", val: `${improved}/${sessions.length}` },
-  ].map(s => `
-    <div class="stat-card">
-      <div class="stat-val">${s.val}</div>
-      <div class="stat-label">${s.label}</div>
     </div>
-  `).join("");
 
-  // Session rows (newest first)
-  list.innerHTML = [...sessions].reverse().map(s => {
-    const delta = s.post - s.pre;
-    const sign  = delta > 0 ? "+" : "";
-    const dc    = delta > 0 ? "#3fb950" : delta < 0 ? "#f85149" : "var(--subtle)";
-    const pc    = scoreColor(s.pre).main;
-    const poc   = scoreColor(s.post).main;
-    const dateStr = formatDate(s.date);
-    return `
-      <div class="session-row">
-        <div class="session-meta">
-          <div class="session-date">${dateStr}</div>
-          ${s.note ? `<div class="session-note">${escHtml(s.note)}</div>` : ""}
+    <div id="success-screen">
+      <div class="success-card">
+        <h2 class="success-title">Success! ✓</h2>
+        <div class="result-flex">
+          <div class="result-col">
+            <div class="result-label">Before</div>
+            <div id="res-pre-face"></div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="result-col">
+            <div class="result-label">After</div>
+            <div id="res-post-face"></div>
+          </div>
         </div>
-        <div class="session-scores">
-          <span class="session-score" style="color:${pc}">${s.pre}</span>
-          <span class="session-arrow">→</span>
-          <span class="session-score" style="color:${poc}">${s.post}</span>
-          <span class="session-delta" style="color:${dc}">${sign}${delta}</span>
+        <div class="change-box" id="res-change-box">
+          <div class="result-label" style="margin:0;">Change</div>
+          <div class="change-val" id="res-change-val"></div>
         </div>
+        <button class="new-btn" onclick="resetForm()">Start New Entry</button>
       </div>
-    `;
-  }).join("");
-}
+    </div>
 
-// ── Clear ─────────────────────────────────────────────────────────────────────
-
-function startClear() {
-  document.getElementById("clear-btn").style.display = "none";
-  document.getElementById("confirm-clear-btn").style.display = "block";
-  document.getElementById("cancel-clear-btn").style.display = "block";
-}
-
-function cancelClear() {
-  document.getElementById("clear-btn").style.display = "block";
-  document.getElementById("confirm-clear-btn").style.display = "none";
-  document.getElementById("cancel-clear-btn").style.display = "none";
-}
-
-function confirmClear() {
-  state.sessions = [];
-  persistSessions();
-  document.getElementById("tab-log").textContent = "Log (0)";
-  cancelClear();
-  renderLog();
-}
-
-// ── Export CSV ────────────────────────────────────────────────────────────────
-
-function exportCSV() {
-  const header = "Date,Pre,Post,Change,Note,Mode\n";
-  const rows = state.sessions.map(s => {
-    const d = formatDate(s.date);
-    return `"${d}",${s.pre},${s.post},${s.post - s.pre},"${escCSV(s.note || "")}","${s.mode || "live"}"`;
-  }).join("\n");
-  const blob = new Blob([header + rows], { type: "text/csv" });
-  const url  = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `calhn-mood-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ── Scale reference ───────────────────────────────────────────────────────────
-
-function buildScaleRef() {
-  const grid = document.getElementById("ref-grid");
-  grid.innerHTML = Object.entries(ANCHORS).map(([n, label]) => {
-    const c = scoreColor(Number(n)).main;
-    return `
-      <div class="ref-row">
-        <span class="ref-num" style="color:${c}">${n}</span>
-        <span class="ref-text">${label}</span>
-      </div>
-    `;
-  }).join("");
-}
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
-function formatDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
-    + " · "
-    + d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function escCSV(s) {
-  return String(s).replace(/"/g, '""');
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-
-function init() {
-  loadSessions();
-  buildGrid("pre-grid",  "pre");
-  buildGrid("post-grid", "post");
-  buildScaleRef();
-
-  // Set retro date default to now
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString().slice(0,16);
-  document.getElementById("retro-date").value = local;
-
-  // Update tab count
-  document.getElementById("tab-log").textContent = `Log (${state.sessions.length})`;
-}
-
-init();
-</script>
+  </div> <div id="view-log" class="view">
+    <div id="summary-strip"></div>
+    <div id="empty-log">
+      <div style="font-size: 24px; margin-bottom: 8px;">📂</div>
+      No sessions logged locally yet.
+    </div>
+    <div id="session-list"></div>
+    
+    <div id="log-actions">
+      <button class="action-btn" id="export-btn" onclick="exportCSV()">Export CSV</button>
+      <button class="action-btn" id="clear-btn" onclick="startClear()">Reset Log</button>
+      <button class="action-btn" id="confirm-clear-btn" onclick="confirmClear()">Yes, Delete All</button>
+      <button class="action-btn" id="cancel-clear-btn" onclick="cancelClear()">Cancel</button>
+    </div>
+  </div> </div>
 
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js');
-    });
+  // ==========================================
+  // CONFIGURATION
+  // ==========================================
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7cXBhkfvj0mF5NF2ruDpPJRND4fSru-RU3FSsp1rozHg3MOcCO/exec"; 
+  const STORAGE_KEY = "calhn_mt_smiley_log";
+
+  // ==========================================
+  // STATE MANAGEMENT
+  // ==========================================
+  const FACE_COUNT = 7;
+  let state = {
+    view: "entry",
+    pre: null,
+    post: null,
+    sessions: []
+  };
+
+  function loadSessions() {
+    try { state.sessions = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch { state.sessions = []; }
+    updateLogBadge();
   }
+
+  function persistSessions() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
+    updateLogBadge();
+  }
+
+  function updateLogBadge() {
+    const badge = document.getElementById("log-badge");
+    const count = state.sessions.length;
+    badge.textContent = count;
+    
+    if (count > 0) {
+      badge.classList.add("has-data");
+    } else {
+      badge.classList.remove("has-data");
+    }
+  }
+
+  // ==========================================
+  // SLIDER TAB LOGIC
+  // ==========================================
+  function switchTab(tab) {
+    state.view = tab;
+    
+    // Move the sliding background
+    document.getElementById("tab-slider").setAttribute("data-active", tab);
+    
+    // Update Button Text Colors
+    document.getElementById("tab-entry").classList.toggle("active", tab === "entry");
+    document.getElementById("tab-log").classList.toggle("active", tab === "log");
+    
+    // Switch Views
+    document.getElementById("view-entry").classList.toggle("active", tab === "entry");
+    document.getElementById("view-log").classList.toggle("active", tab === "log");
+    
+    if (tab === "log") renderLog();
+  }
+
+  // ==========================================
+  // FACE GENERATOR LOGIC (Math)
+  // ==========================================
+  function getFaceData(score) {
+    const i = score - 1;
+    const t = i / (FACE_COUNT - 1);
+    return {
+      score: score,
+      color: `hsl(${t * 140}, ${65 + t * 10}%, ${42 + t * 8}%)`,
+      bg: `hsl(${t * 140}, ${65 + t * 10}%, 95%)`,
+      t: t
+    };
+  }
+
+  function getDiffColors(diff) {
+      return {
+          text: diff > 0 ? '#15803d' : diff < 0 ? '#b91c1c' : '#475569',
+          bg: diff > 0 ? '#dcfce7' : diff < 0 ? '#fee2e2' : '#f1f5f9'
+      };
+  }
+
+  function createFaceSVG(face, isSelected, size) {
+    const cx = size / 2, cy = size / 2, r = size * 0.42;
+    const eyeY = cy - r * 0.15, esp = r * 0.36, er = size * 0.05;
+    const my = cy + r * 0.24, mw = r * 0.48;
+    const curve = -10 + face.t * 22;
+    const sc = isSelected ? '#fff' : '#555';
+    const fill = isSelected ? face.color : face.bg;
+    const strokeWidth = isSelected ? 3.5 : 2;
+
+    let eyesHTML = '';
+    if (face.t < 0.35) { // Sad
+      eyesHTML = `<ellipse cx="${cx - esp}" cy="${eyeY}" rx="${er}" ry="${er * 1.3}" fill="${sc}" /><ellipse cx="${cx + esp}" cy="${eyeY}" rx="${er}" ry="${er * 1.3}" fill="${sc}" />`;
+    } else if (face.t > 0.65) { // Happy
+      eyesHTML = `<path d="M ${cx-esp-er*1.3} ${eyeY} Q ${cx-esp} ${eyeY-er*2.2}, ${cx-esp+er*1.3} ${eyeY}" stroke="${sc}" stroke-width="2" fill="none" stroke-linecap="round" /><path d="M ${cx+esp-er*1.3} ${eyeY} Q ${cx+esp} ${eyeY-er*2.2}, ${cx+esp+er*1.3} ${eyeY}" stroke="${sc}" stroke-width="2" fill="none" stroke-linecap="round" />`;
+    } else { // Neutral
+      eyesHTML = `<circle cx="${cx - esp}" cy="${eyeY}" r="${er}" fill="${sc}" /><circle cx="${cx + esp}" cy="${eyeY}" r="${er}" fill="${sc}" />`;
+    }
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${face.color}" stroke-width="${strokeWidth}" />${eyesHTML}<path d="M ${cx-mw} ${my} Q ${cx} ${my+curve}, ${cx+mw} ${my}" stroke="${sc}" stroke-width="2.2" fill="none" stroke-linecap="round" /></svg>`;
+  }
+
+  // ==========================================
+  // UI INTERACTION (Faces)
+  // ==========================================
+  function renderFaces(containerId, type, selectedValue) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ''; 
+
+    for (let i = 1; i <= FACE_COUNT; i++) {
+      const faceData = getFaceData(i);
+      const isSelected = selectedValue === i;
+      const isMuted = selectedValue !== null && selectedValue !== i;
+      
+      const btn = document.createElement('button');
+      btn.className = `face-btn ${isSelected ? 'selected' : ''} ${isMuted ? 'muted' : ''}`;
+      btn.innerHTML = createFaceSVG(faceData, isSelected, 45); 
+      
+      btn.onclick = () => handleFaceClick(type, i);
+      container.appendChild(btn);
+    }
+  }
+
+  function handleFaceClick(type, score) {
+    if (type === 'pre') {
+      state.pre = score;
+      renderFaces('pre-faces', 'pre', state.pre);
+      setTimeout(() => document.getElementById('post-row').classList.add('visible'), 300);
+    } else {
+      state.post = score;
+      renderFaces('post-faces', 'post', state.post);
+      setTimeout(() => {
+        document.getElementById('notes-row').classList.add('visible');
+        document.getElementById('submit-row').classList.add('visible');
+      }, 200);
+    }
+  }
+
+  // ==========================================
+  // SUBMISSION LOGIC (Local + Cloud)
+  // ==========================================
+  async function submitData() {
+    const btn = document.getElementById('submit-btn');
+    const status = document.getElementById("sync-status");
+    const notes = document.getElementById('notes-input').value.trim();
+    
+    btn.disabled = true;
+    btn.innerText = "Saving Session...";
+
+    // 1. Save Locally First
+    const sessionRecord = {
+      pre: state.pre,
+      post: state.post,
+      note: notes,
+      date: new Date().toISOString()
+    };
+    state.sessions.push(sessionRecord);
+    persistSessions();
+    
+    showSuccessScreen(); 
+
+    // 2. Attempt Sync to Google Sheets
+    if(WEB_APP_URL && WEB_APP_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+        status.style.display = "block";
+        status.style.color = "#94A3B8";
+        status.textContent = "Syncing to cloud...";
+
+        try {
+            await fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify(sessionRecord)
+            });
+            status.style.color = "#15803d";
+            status.textContent = "✓ Synced to Sheet";
+        } catch (err) {
+            status.style.color = "#b91c1c";
+            status.textContent = "⚠ Saved locally. Cloud sync failed.";
+        }
+        setTimeout(() => { status.style.display = "none"; }, 4000);
+    }
+  }
+
+  function showSuccessScreen() {
+    document.getElementById('form-screen').style.display = 'none';
+    const successScreen = document.getElementById('success-screen');
+    successScreen.style.display = 'block';
+
+    const diff = state.post - state.pre;
+    const diffString = diff > 0 ? '+' + diff : diff.toString();
+    const colors = getDiffColors(diff);
+
+    document.getElementById('res-pre-face').innerHTML = createFaceSVG(getFaceData(state.pre), true, 60);
+    document.getElementById('res-post-face').innerHTML = createFaceSVG(getFaceData(state.post), true, 60);
+    
+    const changeBox = document.getElementById('res-change-box');
+    changeBox.style.backgroundColor = colors.bg;
+    
+    const changeVal = document.getElementById('res-change-val');
+    changeVal.innerText = diffString;
+    changeVal.style.color = colors.text;
+  }
+
+  function resetForm() {
+    state.pre = null;
+    state.post = null;
+    document.getElementById('notes-input').value = "";
+    
+    document.getElementById('post-row').classList.remove('visible');
+    document.getElementById('notes-row').classList.remove('visible');
+    document.getElementById('submit-row').classList.remove('visible');
+    
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = false;
+    btn.innerText = "Save Session";
+
+    document.getElementById('success-screen').style.display = 'none';
+    document.getElementById('form-screen').style.display = 'block';
+    
+    renderFaces('pre-faces', 'pre', null);
+    renderFaces('post-faces', 'post', null);
+  }
+
+  // ==========================================
+  // LOG VIEW RENDERING
+  // ==========================================
+  function renderLog() {
+    const sessions = state.sessions;
+    const empty = document.getElementById("empty-log");
+    const list = document.getElementById("session-list");
+    const strip = document.getElementById("summary-strip");
+
+    if (sessions.length === 0) {
+      empty.style.display = "block";
+      list.innerHTML = "";
+      strip.innerHTML = "";
+      document.getElementById("export-btn").style.display = "none";
+      document.getElementById("clear-btn").style.display = "none";
+      return;
+    }
+
+    empty.style.display = "none";
+    document.getElementById("export-btn").style.display = "block";
+    document.getElementById("clear-btn").style.display = "block";
+
+    const pres = sessions.map(s => s.pre);
+    const posts = sessions.map(s => s.post);
+    const deltas = sessions.map(s => s.post - s.pre);
+    const avg = arr => (arr.reduce((a,b) => a+b,0) / arr.length).toFixed(1);
+    const improved = deltas.filter(d => d > 0).length;
+
+    strip.innerHTML = [
+      { label: "Sessions", val: sessions.length },
+      { label: "Avg Pre", val: avg(pres) },
+      { label: "Avg Post", val: avg(posts) },
+      { label: "Improved", val: `${improved}/${sessions.length}` }
+    ].map(s => `<div class="stat-card"><div class="stat-val">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join("");
+
+    list.innerHTML = [...sessions].reverse().map(s => {
+      const delta = s.post - s.pre;
+      const sign = delta > 0 ? "+" : "";
+      const colors = getDiffColors(delta);
+      const pc = getFaceData(s.pre).color;
+      const poc = getFaceData(s.post).color;
+      
+      const d = new Date(s.date);
+      const dateStr = `${d.toLocaleDateString("en-AU", { day: "numeric", month: "short" })} · ${d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}`;
+
+      return `
+        <div class="session-row">
+          <div class="session-meta">
+            <div class="session-date">${dateStr}</div>
+            ${s.note ? `<div class="session-note">${s.note.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>` : ""}
+          </div>
+          <div class="session-scores">
+            <span class="session-score" style="color:${pc}">${s.pre}</span>
+            <span class="session-arrow">→</span>
+            <span class="session-score" style="color:${poc}">${s.post}</span>
+            <span class="session-delta" style="color:${colors.text}">${sign}${delta}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // ==========================================
+  // RESET LOG
+  // ==========================================
+  function startClear() {
+    document.getElementById("export-btn").style.display = "none";
+    document.getElementById("clear-btn").style.display = "none";
+    document.getElementById("confirm-clear-btn").style.display = "block";
+    document.getElementById("cancel-clear-btn").style.display = "block";
+  }
+
+  function cancelClear() {
+    document.getElementById("export-btn").style.display = "block";
+    document.getElementById("clear-btn").style.display = "block";
+    document.getElementById("confirm-clear-btn").style.display = "none";
+    document.getElementById("cancel-clear-btn").style.display = "none";
+  }
+
+  function confirmClear() {
+    state.sessions = [];
+    persistSessions();
+    cancelClear();
+    renderLog();
+  }
+
+  // ==========================================
+  // EXPORT CSV
+  // ==========================================
+  function exportCSV() {
+    const header = "Date,Pre,Post,Change,Note\n";
+    const rows = state.sessions.map(s => {
+      const d = new Date(s.date).toLocaleString("en-AU");
+      const safeNote = String(s.note || "").replace(/"/g, '""');
+      return `"${d}",${s.pre},${s.post},${s.post - s.pre},"${safeNote}"`;
+    }).join("\n");
+    
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `CALHN_MT_Mood_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ==========================================
+  // INITIALIZE
+  // ==========================================
+  loadSessions();
+  renderFaces('pre-faces', 'pre', null);
+  renderFaces('post-faces', 'post', null);
+
 </script>
 </body>
 </html>
