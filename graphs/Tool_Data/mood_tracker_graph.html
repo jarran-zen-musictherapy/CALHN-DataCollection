@@ -250,7 +250,6 @@
 
     <div id="status"></div>
 
-    <!-- Filter / Date Range Row -->
     <div id="filter-row" style="display:none">
         <div class="filter-group">
             <span class="filter-label">Period:</span>
@@ -273,7 +272,6 @@
     </div>
 
     <div id="charts-area">
-        <!-- Summary stats strip -->
         <div class="summary" id="statsStrip">
             <div class="summary-card">
                 <h3>Total Sessions</h3>
@@ -302,7 +300,6 @@
             </div>
         </div>
 
-        <!-- Chart 1: Mean Pre vs Post -->
         <div class="chart-section">
             <div class="chart-title">Average Observed Mood — Pre vs Post</div>
             <div class="chart-container short">
@@ -310,7 +307,6 @@
             </div>
         </div>
 
-        <!-- Chart 2: Delta over time -->
         <div class="chart-section">
             <div class="chart-title">Mood Change per Session Over Time</div>
             <div class="chart-container">
@@ -318,7 +314,6 @@
             </div>
         </div>
 
-        <!-- Chart 3: Score distribution -->
         <div class="chart-section">
             <div class="chart-title">Score Distribution — Pre vs Post</div>
             <div class="chart-container">
@@ -334,7 +329,7 @@
 
 <script>
     // ── CONFIG ──────────────────────────────────────────────────────────────
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4s61fogaguvaP9dJAKrDDkj8nReLPgGHB6gWYA4PtUcHapTxhPcATdtp0CaaRYtzTTX4GinjZrrvN/pub?gid=0&single=true&output=csv"; // Jarran will paste the published CSV URL here
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4s61fogaguvaP9dJAKrDDkj8nReLPgGHB6gWYA4PtUcHapTxhPcATdtp0CaaRYtzTTX4GinjZrrvN/pub?gid=0&single=true&output=csv"; 
 
     // ── THRF RANGES ──────────────────────────────────────────────────────────
     const THRF_RANGES = {
@@ -523,7 +518,9 @@
             if (a.dateObj && b.dateObj) return a.dateObj - b.dateObj;
             return 0;
         });
-        const labels = sorted.map(r => r.dateStr);
+        
+        // Use sequential numbers for sessions instead of dates
+        const labels = sorted.map((_, index) => String(index + 1));
         const data = sorted.map(r => r.change);
 
         charts.chart2 = new Chart(document.getElementById('chart2'), {
@@ -552,6 +549,8 @@
                     tooltip: {
                         ...TOOLTIP_OPTS,
                         callbacks: {
+                            // Prepend "Session " to the tooltip title
+                            title: ctx => `Session ${ctx[0].label}`,
                             label: ctx => ` Change: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(1)}`,
                         },
                     },
@@ -561,11 +560,11 @@
                         grid: { display: false },
                         title: {
                             display: true,
-                            text: 'Session Date',
+                            text: 'Session Number',
                             font: { size: 13, weight: 'bold' },
                         },
                         ticks: {
-                            maxRotation: 45,
+                            maxRotation: 0, // Keep numbers flat
                             autoSkip: true,
                             maxTicksLimit: 16,
                         },
