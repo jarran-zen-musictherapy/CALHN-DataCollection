@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MT Mood Tracker — Pre/Post Analysis</title>
+    <title>VAS Mood Tracker — Pre/Post Analysis</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
@@ -239,8 +239,8 @@
 </head>
 <body>
 <div class="container">
-    <h1>Music Therapy — Observed Mood Tracker</h1>
-    <p class="subtitle">Pre / Post Session Analysis</p>
+    <h1>VAS Mood Check — Pre/Post Tracker</h1>
+    <p class="subtitle">Visual Analog Scale · Pre / Post Session Analysis</p>
 
     <div id="controls">
         <button class="refresh-btn" id="refreshBtn">&#8635; Refresh</button>
@@ -280,12 +280,12 @@
             <div class="summary-card">
                 <h3>Mean Pre Score</h3>
                 <div class="value" id="statMeanPre">—</div>
-                <div class="subtext">out of 10</div>
+                <div class="subtext">out of 7</div>
             </div>
             <div class="summary-card">
                 <h3>Mean Post Score</h3>
                 <div class="value" id="statMeanPost">—</div>
-                <div class="subtext">out of 10</div>
+                <div class="subtext">out of 7</div>
             </div>
             <div class="summary-card">
                 <h3>Mean Change</h3>
@@ -321,7 +321,7 @@
         </div>
 
         <p class="legend-note">
-            Data sourced from MT Observed Mood Tracker (Google Sheets). Each session represents a single patient encounter.
+            Data sourced from VAS Mood Check (Google Sheets). Each session represents a single patient encounter.
         </p>
     </div>
 </div>
@@ -476,7 +476,7 @@
                     tooltip: {
                         ...TOOLTIP_OPTS,
                         callbacks: {
-                            label: ctx => ` Score: ${ctx.parsed.y.toFixed(2)} / 10`,
+                            label: ctx => ` Score: ${ctx.parsed.y.toFixed(2)} / 7`,
                         },
                     },
                 },
@@ -487,8 +487,8 @@
                     },
                     y: {
                         min: 0,
-                        max: 10,
-                        title: { display: true, text: 'Mood Score (1–10)', font: { size: 13, weight: 'bold' } },
+                        max: 7,
+                        title: { display: true, text: 'Mood Score (1–7)', font: { size: 13, weight: 'bold' } },
                         grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: { stepSize: 1 },
                     },
@@ -544,8 +544,8 @@
                         ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 20 },
                     },
                     y: {
-                        min: -10, // Locks the bottom of the scale
-                        max: 10,  // Locks the top of the scale
+                        min: -7, // Locks the bottom of the scale
+                        max: 7,  // Locks the top of the scale
                         title: { display: true, text: 'Mood Change', font: { size: 13, weight: 'bold' } },
                         grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: { callback: v => (v >= 0 && v !== 0 ? '+' : '') + v },

@@ -381,8 +381,8 @@ function saveRecord() {
   // 3. Send to Google Sheets
   fetch(WEBHOOK_URL, {
     method: 'POST',
-    mode: 'no-cors', 
-    headers: { 'Content-Type': 'application/json' },
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(record)
   }).then(() => {
     alert('Session Logged & Synced to Sheet.');

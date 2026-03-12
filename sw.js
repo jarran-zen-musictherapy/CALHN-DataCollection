@@ -1,6 +1,6 @@
 const CACHE = "calhn-mt-v1";
 const PRECACHE = [
-  "/CALHN-DataCollection/i-had-a-session.html",
+  "/CALHN-DataCollection/Clinical_Tools/i-had-a-session.html",
   "/CALHN-DataCollection/manifest.json"
 ];
 
