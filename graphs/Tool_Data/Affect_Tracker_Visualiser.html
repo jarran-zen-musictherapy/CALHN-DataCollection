@@ -195,7 +195,7 @@
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        // Data Structure — populated by fetchAndRender()
+        // Data Structure
         let allData = {}; 
 
         const THRF_RANGES = {
@@ -211,7 +211,33 @@
         // Helper to format chart scales
         const chartScales = {
             y: { min: 1, max: 7, title: { display: true, text: 'Mood Score (1-7)', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-            x: { title: { display: true, text: 'Time', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
+            x: { title: { display: true, text: 'Time Period', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
+        };
+
+        // Helper to convert Hex to RGBA so overlapping dots blend visually
+        function hexToRgba(hex, alpha) {
+            if (!hex || !hex.startsWith('#')) return hex || 'rgba(100,100,100,0.5)';
+            let c = hex.substring(1).split('');
+            if (c.length === 3) c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            c = '0x' + c.join('');
+            return 'rgba(' + [(c>>16)&255, (c>>8)&255, c&255].join(',') + ',' + alpha + ')';
+        }
+
+        // Custom Tooltip Logic
+        const chartTooltipOptions = {
+            backgroundColor: 'rgba(0,0,0,0.85)', padding: 12, titleFont: { size: 14 }, bodyFont: { size: 13 },
+            callbacks: {
+                label: function(context) {
+                    if (context.dataset.type === 'line') {
+                        if (context.parsed.y === null) return null;
+                        return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} avg`;
+                    }
+                    const s = context.raw.session;
+                    const isPre = context.dataset.label.includes('Before');
+                    const emotion = isPre ? s.preEmotion : s.postEmotion;
+                    return `${isPre ? 'Before' : 'After'} (${s.date}): ${emotion} (Score: ${context.parsed.y})`;
+                }
+            }
         };
 
         function createChart(period) {
@@ -219,59 +245,77 @@
             if (chart) chart.destroy();
 
             const legendNote = document.getElementById('legendNote');
-            let labels = [];
-            let preVals = [];
-            let postVals = [];
+            let labels = [], preVals = [], postVals = [];
+            let scatterPre = [], scatterPost = [], preColors = [], postColors = [];
             
             if (period === 'all') {
-                legendNote.textContent = 'Yearly averages across all recorded sessions.';
+                legendNote.textContent = 'Yearly averages with individual session affective colors overlayed.';
                 labels = Object.keys(allData).sort();
                 labels.forEach(year => {
                     const stats = getAggregatedStats(allData[year]);
                     preVals.push(stats.pre);
                     postVals.push(stats.post);
+                    allData[year].forEach(monthData => {
+                        if(monthData && monthData.sessions) {
+                            monthData.sessions.forEach(s => {
+                                scatterPre.push({ x: year, y: s.preScore, session: s });
+                                scatterPost.push({ x: year, y: s.postScore, session: s });
+                                preColors.push(hexToRgba(s.preHex, 0.85));
+                                postColors.push(hexToRgba(s.postHex, 0.85));
+                            });
+                        }
+                    });
                 });
             } else if (THRF_RANGES[period]) {
-                legendNote.textContent = 'Monthly averages for selected THRF reporting period.';
+                legendNote.textContent = 'Monthly averages & session colors for THRF reporting period.';
                 const r = THRF_RANGES[period];
                 const data = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
                 labels = data.labels; preVals = data.preVals; postVals = data.postVals;
+                data.allSessions.forEach(m => {
+                    m.sessions.forEach(s => {
+                        scatterPre.push({ x: m.label, y: s.preScore, session: s });
+                        scatterPost.push({ x: m.label, y: s.postScore, session: s });
+                        preColors.push(hexToRgba(s.preHex, 0.85));
+                        postColors.push(hexToRgba(s.postHex, 0.85));
+                    });
+                });
             } else {
-                // Specific Year
-                legendNote.textContent = 'Monthly averages for ' + period + '.';
+                legendNote.textContent = 'Monthly averages & session colors for ' + period + '.';
                 labels = months;
-                const yearData = allData[period] || Array(12).fill({pre:0, post:0, change:0, count:0});
-                labels.forEach((m, idx) => {
-                    const dataPoint = yearData[idx];
-                    preVals.push(dataPoint && dataPoint.count > 0 ? Number((dataPoint.pre / dataPoint.count).toFixed(2)) : null);
-                    postVals.push(dataPoint && dataPoint.count > 0 ? Number((dataPoint.post / dataPoint.count).toFixed(2)) : null);
+                const yearData = allData[period] || Array(12).fill({preSum:0, postSum:0, changeSum:0, count:0, sessions:[]});
+                labels.forEach((mLabel, idx) => {
+                    const mData = yearData[idx];
+                    preVals.push(mData && mData.count > 0 ? Number((mData.preSum / mData.count).toFixed(2)) : null);
+                    postVals.push(mData && mData.count > 0 ? Number((mData.postSum / mData.count).toFixed(2)) : null);
+                    if(mData && mData.sessions) {
+                        mData.sessions.forEach(s => {
+                            scatterPre.push({ x: mLabel, y: s.preScore, session: s });
+                            scatterPost.push({ x: mLabel, y: s.postScore, session: s });
+                            preColors.push(hexToRgba(s.preHex, 0.85));
+                            postColors.push(hexToRgba(s.postHex, 0.85));
+                        });
+                    }
                 });
             }
 
             chart = new Chart(ctx, {
-                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Before Session', data: preVals, borderColor: '#4A9BC7', backgroundColor: '#4A9BC7', borderWidth: 3, tension: 0.2, pointRadius: 5, pointHoverRadius: 8 },
-                        { label: 'After Session', data: postVals, borderColor: '#5BA08A', backgroundColor: '#5BA08A', borderWidth: 3, tension: 0.2, pointRadius: 5, pointHoverRadius: 8 }
+                        { type: 'line', label: 'Avg Before', data: preVals, borderColor: 'rgba(74, 155, 199, 0.5)', backgroundColor: 'transparent', borderDash: [5, 5], borderWidth: 2, tension: 0.2, pointRadius: 0, hitRadius: 5 },
+                        { type: 'line', label: 'Avg After', data: postVals, borderColor: 'rgba(91, 160, 138, 0.5)', backgroundColor: 'transparent', borderDash: [5, 5], borderWidth: 2, tension: 0.2, pointRadius: 0, hitRadius: 5 },
+                        { type: 'scatter', label: 'Before Colors', data: scatterPre, backgroundColor: preColors, borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 7, pointHoverRadius: 10 },
+                        { type: 'scatter', label: 'After Colors', data: scatterPost, backgroundColor: postColors, borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 7, pointHoverRadius: 10 }
                     ]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
-                        tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', padding: 12, titleFont: { size: 14 }, bodyFont: { size: 13 },
-                            callbacks: {
-                                label: function(context) {
-                                    if (context.parsed.y === null) return null;
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' avg';
-                                }
-                            }
-                        }
+                    plugins: { 
+                        legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true, filter: (item) => !item.text.includes('Avg') } },
+                        tooltip: chartTooltipOptions 
                     },
                     scales: chartScales,
-                    interaction: { intersect: false, mode: 'index' }
+                    interaction: { mode: 'nearest', intersect: true } // Changed to nearest so individual dots trigger cleanly
                 }
             });
         }
@@ -281,7 +325,7 @@
             let preSum = 0, postSum = 0, changeSum = 0, totalCount = 0;
             monthArray.forEach(m => {
                 if (m && m.count > 0) {
-                    preSum += m.pre; postSum += m.post; changeSum += m.change; totalCount += m.count;
+                    preSum += m.preSum; postSum += m.postSum; changeSum += m.changeSum; totalCount += m.count;
                 }
             });
             return {
@@ -331,7 +375,6 @@
             updateSummary(period);
         }
 
-        // Robust CSV Parser (handles commas inside quotes)
         function parseCSV(text) {
             const lines = text.trim().split('\n');
             const parseLine = (line) => {
@@ -369,7 +412,7 @@
                 const mIdx = d.getMonth();
 
                 if (!structure[year]) {
-                    structure[year] = Array(12).fill(null).map(() => ({ pre: 0, post: 0, change: 0, count: 0 }));
+                    structure[year] = Array(12).fill(null).map(() => ({ preSum: 0, postSum: 0, changeSum: 0, count: 0, sessions: [] }));
                 }
 
                 const pre = parseFloat(row['preScore']);
@@ -378,10 +421,21 @@
                 if (isNaN(change) && !isNaN(pre) && !isNaN(post)) change = post - pre;
 
                 if (!isNaN(pre) && !isNaN(post)) {
-                    structure[year][mIdx].pre += pre;
-                    structure[year][mIdx].post += post;
-                    structure[year][mIdx].change += change;
+                    structure[year][mIdx].preSum += pre;
+                    structure[year][mIdx].postSum += post;
+                    structure[year][mIdx].changeSum += change;
                     structure[year][mIdx].count += 1;
+                    
+                    // SAVE THE COLORS AND EMOTIONS HERE!
+                    structure[year][mIdx].sessions.push({
+                        preScore: pre,
+                        postScore: post,
+                        preHex: row['preHex'] || '#4A9BC7',
+                        postHex: row['postHex'] || '#5BA08A',
+                        preEmotion: row['preEmotion'] || 'Unspecified',
+                        postEmotion: row['postEmotion'] || 'Unspecified',
+                        date: d.toLocaleDateString()
+                    });
                 }
             }
             return structure;
@@ -446,24 +500,27 @@
         }
 
         function getDataForRange(startYear, startMonth, endYear, endMonth) {
-            const labels = [], preVals = [], postVals = [], rawStats = [];
+            const labels = [], preVals = [], postVals = [], rawStats = [], allSessions = [];
             let y = startYear, m = startMonth;
             while (y < endYear || (y === endYear && m <= endMonth)) {
-                labels.push(months[m] + ' ' + y);
-                const yd = allData[y] || Array(12).fill({pre:0, post:0, change:0, count:0});
+                const label = months[m] + ' ' + y;
+                labels.push(label);
+                const yd = allData[y] || Array(12).fill({preSum:0, postSum:0, changeSum:0, count:0, sessions:[]});
                 const mData = yd[m];
                 rawStats.push(mData);
                 
                 if (mData && mData.count > 0) {
-                    preVals.push(Number((mData.pre / mData.count).toFixed(2)));
-                    postVals.push(Number((mData.post / mData.count).toFixed(2)));
+                    preVals.push(Number((mData.preSum / mData.count).toFixed(2)));
+                    postVals.push(Number((mData.postSum / mData.count).toFixed(2)));
+                    allSessions.push({ label: label, sessions: mData.sessions });
                 } else {
                     preVals.push(null); postVals.push(null);
+                    allSessions.push({ label: label, sessions: [] });
                 }
                 
                 m++; if (m > 11) { m = 0; y++; }
             }
-            return { labels, preVals, postVals, rawStats };
+            return { labels, preVals, postVals, rawStats, allSessions };
         }
 
         function updateModalChart() {
@@ -483,19 +540,33 @@
             const ctx = document.getElementById('modalChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
 
+            let scatterPre = [], scatterPost = [], preColors = [], postColors = [];
+            data.allSessions.forEach(m => {
+                m.sessions.forEach(s => {
+                    scatterPre.push({ x: m.label, y: s.preScore, session: s });
+                    scatterPost.push({ x: m.label, y: s.postScore, session: s });
+                    preColors.push(hexToRgba(s.preHex, 0.85));
+                    postColors.push(hexToRgba(s.postHex, 0.85));
+                });
+            });
+
             modalChartInstance = new Chart(ctx, {
-                type: 'line',
                 data: {
                     labels: data.labels,
                     datasets: [
-                        { label: 'Before', data: data.preVals, borderColor: '#4A9BC7', backgroundColor: '#4A9BC7', borderWidth: 2, pointRadius: 4 },
-                        { label: 'After', data: data.postVals, borderColor: '#5BA08A', backgroundColor: '#5BA08A', borderWidth: 2, pointRadius: 4 }
+                        { type: 'line', label: 'Avg Before', data: data.preVals, borderColor: 'rgba(74, 155, 199, 0.5)', backgroundColor: 'transparent', borderDash: [5, 5], borderWidth: 2, tension: 0.2, pointRadius: 0, hitRadius: 5 },
+                        { type: 'line', label: 'Avg After', data: data.postVals, borderColor: 'rgba(91, 160, 138, 0.5)', backgroundColor: 'transparent', borderDash: [5, 5], borderWidth: 2, tension: 0.2, pointRadius: 0, hitRadius: 5 },
+                        { type: 'scatter', label: 'Before Colors', data: scatterPre, backgroundColor: preColors, borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 6, pointHoverRadius: 9 },
+                        { type: 'scatter', label: 'After Colors', data: scatterPost, backgroundColor: postColors, borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 6, pointHoverRadius: 9 }
                     ]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 12 }, padding: 12, usePointStyle: true } } },
-                    scales: chartScales, interaction: { intersect: false, mode: 'index' }
+                    plugins: { 
+                        legend: { display: true, position: 'top', labels: { font: { size: 12 }, padding: 12, usePointStyle: true, filter: (item) => !item.text.includes('Avg') } },
+                        tooltip: chartTooltipOptions 
+                    },
+                    scales: chartScales, interaction: { mode: 'nearest', intersect: true }
                 }
             });
 
@@ -513,7 +584,7 @@
             document.getElementById('modalSummaryText').textContent = startLabel + ' \u2013 ' + endLabel;
         }
 
-        // ─── Export Functions ────────────────────────────────────────────────
+        // ─── Export Functions (Unchanged visually, just preserved structure) ──────────
         function _prepareExport() {
             const controls = document.getElementById('controls');
             const overlay  = document.getElementById('exportTitleOverlay');
