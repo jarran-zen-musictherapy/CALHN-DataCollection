@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Affect Check-In</title>
+<title>Affective Colour Tracker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -17,398 +17,132 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: background-color 1.4s ease;
+    transition: background-color 0.6s ease;
+    overflow-x: hidden;
   }
 
   /* ── Header ──────────────────────────────────────────────────── */
   .step-header {
     width: 100%;
     max-width: 600px;
-    padding: 1.2rem 1.2rem 0.4rem;
+    padding: 1.5rem 1.5rem 0.5rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    justify-content: center;
   }
 
   .step-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.16em;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.38);
-    flex: 1;
+    color: rgba(255,255,255,0.4);
   }
 
-  .step-dots { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
-  .step-dot  { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.18); transition: background 0.4s; }
-  .step-dot.active { background: #c8b89a; }
-  .step-dot.done   { background: rgba(255,255,255,0.5); }
-
-  /* ── Wheel ───────────────────────────────────────────────────── */
+  /* ── Wheel & Legend ─────────────────────────────────────────── */
   .wheel-stage {
+    position: relative;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.6rem 1rem 0;
-    gap: 0.9rem;
+    margin-top: 2vh;
   }
 
   .wheel-container {
     position: relative;
-    width: min(86vw, 500px);
-    height: min(86vw, 500px);
+    width: min(78vw, 440px);
+    height: min(78vw, 440px);
     cursor: crosshair;
-    flex-shrink: 0;
+  }
+
+  .label-ring {
+    position: absolute;
+    inset: -38px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .segment-label {
+    position: absolute;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.25);
+    transform: translate(-50%, -50%);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .segment-label.active { 
+    color: #fff; 
+    font-weight: 700; 
+    font-size: 0.7rem; 
+    text-shadow: 0 0 12px rgba(255,255,255,0.6); 
   }
 
   canvas.wheel {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     border-radius: 50%;
     display: block;
-    box-shadow: 0 10px 70px rgba(0,0,0,0.55);
-    transition: filter 0.7s ease;
-  }
-
-  .centre-dot {
-    position: absolute;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    pointer-events: none;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.8);
+    z-index: 2;
   }
 
   .pin {
     position: absolute;
-    width: 18px; height: 18px;
+    width: 20px; height: 20px;
     border-radius: 50%;
-    background: white;
-    border: 2.5px solid rgba(0,0,0,0.3);
+    border: 3px solid #fff;
     transform: translate(-50%,-50%);
     pointer-events: none;
     display: none;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.4);
-    transition: left 0.1s, top 0.1s;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    z-index: 10;
   }
-
-  .locked-overlay {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s ease 0.35s;
-  }
-
-  .locked-overlay span {
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-  }
-
-  .wheel-container.locked canvas { filter: saturate(0) brightness(0.28); cursor: default; }
-  .wheel-container.locked .pin   { opacity: 0.12; }
-  .wheel-container.locked .locked-overlay { opacity: 1; }
 
   /* ── Readout ─────────────────────────────────────────────────── */
-  .readout {
-    text-align: center;
-    min-height: 3.6rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2rem;
-  }
-
-  .readout-emotion {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.2rem;
-    font-style: italic;
-    color: rgba(255,255,255,0.9);
-    min-height: 2.8rem;
-  }
-
-  .readout-family {
-    font-size: 0.6rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-    min-height: 1rem;
-  }
+  .readout { text-align: center; margin-top: 2rem; min-height: 5.5rem; }
+  .readout-emotion { font-family: 'DM Serif Display', serif; font-size: 3.2rem; font-style: italic; line-height: 1; margin-bottom: 0.2rem;}
+  .readout-family { font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
 
   /* ── Controls ────────────────────────────────────────────────── */
-  .controls {
-    width: min(86vw, 500px);
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    transition: opacity 0.4s;
+  .controls { width: min(85vw, 480px); margin-top: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .intensity-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; margin: 1.2rem 0; }
+  .intensity-fill { height: 100%; background: #fff; border-radius: 2px; transition: width 0.2s; width: 0%; }
+  
+  textarea {
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: #fff; font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    padding: 1rem; resize: none; height: 70px; outline: none;
   }
 
-  .intensity-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .intensity-row label {
-    font-size: 0.58rem;
-    color: rgba(255,255,255,0.35);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    width: 65px;
-    flex-shrink: 0;
-  }
-
-  .intensity-row input[type=range] {
-    flex: 1;
-    accent-color: rgba(255,255,255,0.65);
-    cursor: pointer;
-  }
-
-  .intensity-val {
-    font-size: 0.76rem;
-    color: rgba(255,255,255,0.65);
-    width: 28px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .note-wrap textarea {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    color: #e8e6df;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    padding: 0.65rem 1rem;
-    resize: none;
-    height: 50px;
-    outline: none;
-    transition: border-color 0.2s;
-    line-height: 1.5;
-  }
-
-  .note-wrap textarea:focus { border-color: rgba(255,255,255,0.28); }
-  .note-wrap textarea::placeholder { color: rgba(255,255,255,0.25); }
-
-  .note-counter {
-    font-size: 0.56rem;
-    color: rgba(255,255,255,0.28);
-    text-align: right;
-    margin-top: 0.22rem;
-    letter-spacing: 0.06em;
-    transition: color 0.2s;
-  }
-  .note-counter.near { color: #c8b89a; }
-
-  /* ── Step actions ────────────────────────────────────────────── */
-  .step-actions {
-    width: 100%;
-    padding: 1rem 1.5rem 2.5rem;
-    display: flex;
-    gap: 0.8rem;
-    justify-content: center;
-    margin-top: auto;
-  }
-
+  /* ── Actions ─────────────────────────────────────────────────── */
+  .step-actions { margin-top: auto; padding: 2rem 0 3rem; }
   button.primary {
-    background: rgba(255,255,255,0.12);
-    color: #e8e6df;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.8rem 2rem;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
+    background: #fff; color: #000; font-weight: 700; font-family: 'DM Mono', monospace;
+    font-size: 0.8rem; text-transform: uppercase; padding: 1.2rem 3.5rem; border: none;
+    border-radius: 50px; cursor: pointer; transition: all 0.2s;
   }
+  button.primary:disabled { opacity: 0.2; cursor: default; }
 
-  button.primary:hover  { background: rgba(255,255,255,0.2); }
-  button.primary:active { transform: scale(0.97); }
-  button.primary:disabled { opacity: 0.28; cursor: default; }
-
-  button.ghost {
-    background: transparent;
-    color: rgba(255,255,255,0.35);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.8rem 1.2rem;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-  }
-
-  button.ghost:hover { color: #e8e6df; border-color: rgba(255,255,255,0.25); }
-
-  /* ── Screens ─────────────────────────────────────────────────── */
-  #stepScreen {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  #summaryScreen {
-    display: none;
-    width: 100%;
-    max-width: 520px;
-    padding: 3rem 1.5rem;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.4rem;
-  }
-
-  /* ── Summary ─────────────────────────────────────────────────── */
-  .summary-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.7rem;
-    font-weight: 400;
-    color: rgba(255,255,255,0.88);
-    text-align: center;
-  }
-
-  .summary-cards {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
-  }
-
-  .summary-card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 1rem 1.1rem;
-  }
-
-  .sc-label {
-    font-size: 0.57rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.35);
-    margin-bottom: 0.45rem;
-  }
-
-  .sc-emotion {
-    font-family: 'DM Serif Display', serif;
-    font-style: italic;
-    font-size: 1.35rem;
-    color: rgba(255,255,255,0.9);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .sc-swatch {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .sc-sub {
-    font-size: 0.62rem;
-    color: rgba(255,255,255,0.38);
-    margin-top: 0.25rem;
-  }
-
-  .shift-box {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 1rem 1.2rem;
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.8;
-  }
-
-  .shift-box strong { color: rgba(255,255,255,0.88); }
-
-  /* ── Meta fields in summary ──────────────────────────────────── */
-  .meta-fields {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .meta-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.6rem;
-  }
-
-  .field-group { display: flex; flex-direction: column; gap: 0.28rem; }
-
-  .field-group label {
-    font-size: 0.58rem;
-    color: rgba(255,255,255,0.35);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-
-  .field-group input,
-  .field-group select {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #e8e6df;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    padding: 0.55rem 0.8rem;
-    border-radius: 10px;
-    outline: none;
-    width: 100%;
-    -webkit-appearance: none;
-    transition: border-color 0.2s;
-  }
-
-  .field-group input::placeholder { color: rgba(255,255,255,0.22); }
-  .field-group input:focus,
-  .field-group select:focus { border-color: rgba(255,255,255,0.3); }
-  .field-group select option { background: #1a1c24; }
-
-  .summary-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .fade-up { animation: fadeUp 0.45s ease forwards; }
+  /* ── Summary Screen ──────────────────────────────────────────── */
+  #summaryScreen { display: none; width: 100%; max-width: 500px; padding: 3rem 1.5rem; flex-direction: column; align-items: center; gap: 2rem; }
+  .summary-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; font-style: italic; color: #e8e6df; }
+  .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
+  .summary-card { background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); }
+  .shift-box { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; font-size: 0.85rem; text-align: center; line-height: 1.6; }
 </style>
 </head>
 <body>
 
-<!-- WHEEL STEP (boots here directly) -->
 <div id="stepScreen">
-  <div class="step-header">
-    <span class="step-label" id="stepLabel">Pre — how are you feeling?</span>
-    <div class="step-dots">
-      <div class="step-dot active" id="dot0"></div>
-      <div class="step-dot" id="dot1"></div>
-    </div>
-  </div>
+  <div class="step-header"><div class="step-label" id="stepLabel">Pre-Session Affect</div></div>
 
   <div class="wheel-stage">
     <div class="wheel-container" id="wheelContainer">
-      <canvas class="wheel" id="wheelCanvas" width="520" height="520"></canvas>
-      <div class="centre-dot"></div>
+      <div class="label-ring" id="labelRing"></div>
+      <canvas class="wheel" id="wheelCanvas" width="800" height="800"></canvas>
       <div class="pin" id="wheelPin"></div>
-      <div class="locked-overlay"><span>recorded ✓</span></div>
     </div>
 
     <div class="readout">
@@ -416,16 +150,10 @@
       <div class="readout-family" id="readoutFamily"></div>
     </div>
 
-    <div class="controls" id="controls" style="opacity:0; pointer-events:none;">
-      <div class="intensity-row">
-        <label>Intensity</label>
-        <input type="range" id="intensitySlider" min="1" max="10" value="5">
-        <span class="intensity-val" id="intensityVal">5</span>
-      </div>
-      <div class="note-wrap">
-        <textarea id="noteText" placeholder="Notes..." maxlength="100"></textarea>
-        <div class="note-counter" id="noteCounter">0 / 100</div>
-      </div>
+    <div class="controls" id="controls">
+      <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em;">Intensity: <span id="intText"></span></div>
+      <div class="intensity-bar"><div class="intensity-fill" id="intFill"></div></div>
+      <textarea id="noteText" placeholder="Session focus or observations..."></textarea>
     </div>
   </div>
 
@@ -434,118 +162,69 @@
   </div>
 </div>
 
-<!-- SUMMARY -->
 <div id="summaryScreen">
-  <div class="summary-title">Session complete</div>
+  <div class="summary-title">Affective Shift</div>
   <div class="summary-cards" id="summaryCards"></div>
   <div class="shift-box" id="shiftBox"></div>
-
-  <div class="meta-fields">
-    <div class="meta-row">
-      <div class="field-group">
-        <label>Patient ID</label>
-        <input type="text" id="patientId" placeholder="e.g. JD" maxlength="12" autocomplete="off">
-      </div>
-      <div class="field-group">
-        <label>Ward</label>
-        <input type="text" id="ward" placeholder="e.g. 6B RAH" maxlength="20" autocomplete="off">
-      </div>
-    </div>
-    <div class="field-group">
-      <label>Session Type</label>
-      <select id="sessionType">
-        <option value="">— select —</option>
-        <option>Individual</option>
-        <option>Group</option>
-        <option>Bedside</option>
-        <option>Palliative</option>
-        <option>Stroke Rehab</option>
-        <option>Mental Health</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="summary-actions">
-    <button class="primary" onclick="saveRecord()">Save Record</button>
-    <button class="ghost" onclick="exportCSV()">Export CSV</button>
+  
+  <div style="display:flex; flex-direction:column; gap:1rem; width:100%; align-items:center;">
+    <button class="primary" id="saveBtn" style="width:100%;" onclick="saveRecord()">Save to Log</button>
+    <button style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em; padding:1rem;" onclick="exportCSV()">Download CSV History</button>
   </div>
 </div>
 
 <script>
-var SEGMENTS = [
-  { hue: 0,   label: 'Angry',      family: 'Tension'    },
-  { hue: 22,  label: 'Distressed', family: 'Tension'    },
-  { hue: 40,  label: 'Anxious',    family: 'Fear'       },
-  { hue: 60,  label: 'Alert',      family: 'Arousal'    },
-  { hue: 80,  label: 'Happy',      family: 'Joy'        },
-  { hue: 105, label: 'Content',    family: 'Joy'        },
-  { hue: 130, label: 'Calm',       family: 'Peace'      },
-  { hue: 155, label: 'Relaxed',    family: 'Peace'      },
-  { hue: 175, label: 'Withdrawn',  family: 'Low'        },
-  { hue: 200, label: 'Sad',        family: 'Low'        },
-  { hue: 225, label: 'Tired',      family: 'Low'        },
-  { hue: 250, label: 'Numb',       family: 'Low'        },
-  { hue: 275, label: 'Confused',   family: 'Dissonance' },
-  { hue: 300, label: 'Grief',      family: 'Loss'       },
-  { hue: 330, label: 'Tender',     family: 'Warmth'     },
-  { hue: 355, label: 'Angry',      family: 'Tension'    }
+// 1. Corrected Data: Top (0) is Red, Right (90) is Green-Yellow, Bottom (180) is Cyan, Left (270) is Violet.
+const SEGMENTS = [
+  { hue: 0,   label: 'Angry',     family: 'Tension' }, 
+  { hue: 30,  label: 'Anxious',   family: 'Fear' },    
+  { hue: 60,  label: 'Alert',     family: 'Arousal' }, 
+  { hue: 90,  label: 'Happy',     family: 'Joy' },     
+  { hue: 120, label: 'Content',   family: 'Joy' },     
+  { hue: 150, label: 'Calm',      family: 'Peace' },   
+  { hue: 180, label: 'Relaxed',   family: 'Peace' },   
+  { hue: 210, label: 'Withdrawn', family: 'Low' },     
+  { hue: 240, label: 'Sad',       family: 'Low' },     
+  { hue: 270, label: 'Tired',     family: 'Low' },     
+  { hue: 300, label: 'Numb',      family: 'Loss' },    
+  { hue: 330, label: 'Grief',     family: 'Loss' }   
 ];
 
-function closestSegment(hue) {
-  var best = SEGMENTS[0], bestDist = 360;
-  for (var i = 0; i < SEGMENTS.length; i++) {
-    var s = SEGMENTS[i];
-    var d = Math.abs(s.hue - hue);
-    if (d > 180) d = 360 - d;
-    if (d < bestDist) { bestDist = d; best = s; }
-  }
-  return best;
-}
+// 2. Align Labels: Top is 0 degrees (CSS -90 degrees)
+const ring = document.getElementById('labelRing');
+SEGMENTS.forEach((s, i) => {
+  const label = document.createElement('div');
+  label.className = 'segment-label';
+  label.id = 'lbl-' + i;
+  label.textContent = s.label;
+  const angle = (s.hue - 90) * (Math.PI / 180);
+  const radius = 53; 
+  label.style.top = (50 + radius * Math.sin(angle)) + '%';
+  label.style.left = (50 + radius * Math.cos(angle)) + '%';
+  ring.appendChild(label);
+});
 
-// Draw wheel
-var canvas = document.getElementById('wheelCanvas');
-(function() {
-  var ctx = canvas.getContext('2d');
-  var cx = canvas.width / 2, r = cx;
-  for (var a = 0; a < 360; a++) {
-    var g = ctx.createRadialGradient(cx, cx, r * 0.08, cx, cx, r);
-    g.addColorStop(0,    'hsla(' + a + ',0%,88%,1)');
-    g.addColorStop(0.3,  'hsla(' + a + ',60%,80%,1)');
-    g.addColorStop(0.72, 'hsla(' + a + ',80%,52%,1)');
-    g.addColorStop(1,    'hsla(' + a + ',88%,22%,1)');
+// 3. Draw Visual Wheel: Shift drawing so 0 is exactly at the top (-90 offset)
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+(function drawWheel() {
+  const cx = canvas.width / 2;
+  for (let a = 0; a < 360; a++) {
+    const g = ctx.createRadialGradient(cx, cx, cx * 0.05, cx, cx, cx);
+    g.addColorStop(0, `#ffffff`); 
+    g.addColorStop(0.5, `hsla(${a}, 80%, 60%, 1)`);
+    g.addColorStop(1, `hsla(${a}, 100%, 35%, 1)`);
     ctx.beginPath();
     ctx.moveTo(cx, cx);
-    ctx.arc(cx, cx, r, (a - 1) * Math.PI / 180, (a + 1) * Math.PI / 180);
-    ctx.closePath();
+    // Shift by 90 so HUE 0 = TOP
+    ctx.arc(cx, cx, cx, (a - 91.5) * Math.PI / 180, (a - 88.5) * Math.PI / 180);
     ctx.fillStyle = g;
     ctx.fill();
   }
-  var cg = ctx.createRadialGradient(cx, cx, 0, cx, cx, r * 0.27);
-  cg.addColorStop(0, 'rgba(228,222,210,1)');
-  cg.addColorStop(1, 'rgba(228,222,210,0)');
-  ctx.beginPath();
-  ctx.arc(cx, cx, r * 0.27, 0, Math.PI * 2);
-  ctx.fillStyle = cg;
-  ctx.fill();
 })();
 
-function getColorAt(px, py) {
-  var d = canvas.getContext('2d').getImageData(px, py, 1, 1).data;
-  return { r: d[0], g: d[1], b: d[2] };
-}
-
-function rgbToHue(r, g, b) {
-  r /= 255; g /= 255; b /= 255;
-  var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  if (!d) return -1;
-  var h;
-  if (max === r)      h = ((g - b) / d) % 6;
-  else if (max === g) h = (b - r) / d + 2;
-  else                h = (r - g) / d + 4;
-  h = Math.round(h * 60);
-  return h < 0 ? h + 360 : h;
-}
-
+// Solid color blender to prevent milky pastels
 function floodBg(r, g, b, alpha) {
   document.body.style.backgroundColor =
     'rgb(' + Math.round(14 + (r - 14) * alpha) + ',' +
@@ -553,217 +232,177 @@ function floodBg(r, g, b, alpha) {
              Math.round(19 + (b - 19) * alpha) + ')';
 }
 
-function resetBg() {
-  document.body.style.backgroundColor = 'rgb(14,15,19)';
+function rgbToHex(r, g, b) {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 }
 
-// State
-var step = 0;
-var currentSide = 'pre';
-var captured = { pre: null, post: null };
-var records = [];
-try { records = JSON.parse(localStorage.getItem('mt_affect_records') || '[]'); } catch(e) {}
-
-var pinEl    = document.getElementById('wheelPin');
-var stepBtn  = document.getElementById('stepBtn');
-var controls = document.getElementById('controls');
+let step = 0;
+let captured = { pre: null, post: null };
+let records = JSON.parse(localStorage.getItem('affective_colour_logs') || '[]');
 
 function handleTap(e) {
-  e.preventDefault();
-  if (document.getElementById('wheelContainer').classList.contains('locked')) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const px = (clientX - rect.left) * sx;
+  const py = (clientY - rect.top) * sx;
+  const cx = canvas.width/2;
+  const dist = Math.sqrt((px-cx)**2 + (py-cx)**2);
+  if(dist > cx) return;
 
-  var rect = canvas.getBoundingClientRect();
-  var sx = canvas.width  / rect.width;
-  var sy = canvas.height / rect.height;
-  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  var px = (clientX - rect.left) * sx;
-  var py = (clientY - rect.top)  * sy;
-  var half = canvas.width / 2;
+  // Spatial Intensity
+  const intensity = Math.max(1, Math.min(10, Math.round((dist / cx) * 10)));
+  
+  // Angle for Hue: atan2 puts 0 at right. +90 puts 0 at top.
+  let angle = Math.atan2(py - cx, px - cx) * (180 / Math.PI);
+  angle = (angle + 90) % 360;
+  if (angle < 0) angle += 360;
 
-  if (Math.sqrt((px - half) * (px - half) + (py - half) * (py - half)) > half) return;
+  // Find Closest Segment Math
+  let bestIdx = 0, minDiff = 360;
+  SEGMENTS.forEach((s, i) => {
+    let diff = Math.abs(s.hue - angle);
+    if (diff > 180) diff = 360 - diff;
+    if (diff < minDiff) { minDiff = diff; bestIdx = i; }
+  });
 
-  var col = getColorAt(Math.round(px), Math.round(py));
-  var hue = rgbToHue(col.r, col.g, col.b);
-  var dist = Math.min(Math.sqrt((px - half) * (px - half) + (py - half) * (py - half)) / half, 1);
-  var seg = hue >= 0 ? closestSegment(hue) : { label: 'Neutral', family: 'Neutral' };
-  var intensity = Math.max(1, Math.round(dist * 10));
+  const data = ctx.getImageData(px, py, 1, 1).data;
+  const hex = rgbToHex(data[0], data[1], data[2]);
 
-  pinEl.style.display = 'block';
-  pinEl.style.left = (px / canvas.width * 100) + '%';
-  pinEl.style.top  = (py / canvas.height * 100) + '%';
-  pinEl.style.background = 'rgb(' + col.r + ',' + col.g + ',' + col.b + ')';
+  // Dynamic Background: Links visual intensity of color to the background flood
+  floodBg(data[0], data[1], data[2], (intensity / 10) * 0.45);
 
-  document.getElementById('readoutEmotion').textContent = seg.label;
-  document.getElementById('readoutFamily').textContent  = seg.family;
-  document.getElementById('intensitySlider').value      = intensity;
-  document.getElementById('intensityVal').textContent   = intensity;
+  // UI Updates
+  document.querySelectorAll('.segment-label').forEach(l => l.classList.remove('active'));
+  document.getElementById('lbl-' + bestIdx).classList.add('active');
 
-  controls.style.opacity      = '1';
+  const pin = document.getElementById('wheelPin');
+  pin.style.display = 'block';
+  pin.style.left = (px/canvas.width*100)+'%';
+  pin.style.top = (py/canvas.height*100)+'%';
+  pin.style.backgroundColor = hex;
+
+  document.getElementById('readoutEmotion').textContent = SEGMENTS[bestIdx].label;
+  document.getElementById('readoutFamily').textContent = SEGMENTS[bestIdx].family;
+  document.getElementById('intFill').style.width = (intensity * 10) + '%';
+  document.getElementById('intText').textContent = intensity + "/10";
+  
+  const controls = document.getElementById('controls');
+  controls.style.opacity = '1';
   controls.style.pointerEvents = 'auto';
-  stepBtn.disabled = false;
+  document.getElementById('stepBtn').disabled = false;
 
-  floodBg(col.r, col.g, col.b, 0.32);
-  captured[currentSide] = {
-    hue:      hue >= 0 ? Math.round(hue) : -1,
-    r:        col.r, g: col.g, b: col.b,
-    label:    seg.label,
-    family:   seg.family,
-    intensity: intensity
+  captured[step===0?'pre':'post'] = { 
+    label: SEGMENTS[bestIdx].label, 
+    family: SEGMENTS[bestIdx].family, 
+    intensity: intensity,
+    hex: hex,
+    r: data[0], g: data[1], b: data[2]
   };
 }
 
-canvas.addEventListener('click',    handleTap);
-canvas.addEventListener('touchend', handleTap, { passive: false });
-
-document.getElementById('intensitySlider').addEventListener('input', function() {
-  document.getElementById('intensityVal').textContent = this.value;
-  if (captured[currentSide]) captured[currentSide].intensity = parseInt(this.value, 10);
-});
-
-document.getElementById('noteText').addEventListener('input', function() {
-  var len = this.value.length;
-  var ct  = document.getElementById('noteCounter');
-  ct.textContent = len + ' / 100';
-  ct.classList.toggle('near', len >= 80);
-});
-
-function loadStep(s) {
-  step = s;
-  currentSide = s === 0 ? 'pre' : 'post';
-  document.getElementById('stepLabel').textContent = s === 0
-    ? 'Pre — how are you feeling?'
-    : 'Post — how are you feeling now?';
-  stepBtn.textContent = s === 0 ? 'Continue' : 'Done';
-  stepBtn.disabled    = true;
-  document.getElementById('dot0').className = 'step-dot ' + (s === 0 ? 'active' : 'done');
-  document.getElementById('dot1').className = 'step-dot ' + (s === 1 ? 'active' : '');
-  document.getElementById('wheelContainer').classList.remove('locked');
-  pinEl.style.display = 'none';
-  document.getElementById('readoutEmotion').textContent = '';
-  document.getElementById('readoutFamily').textContent  = '';
-  document.getElementById('intensitySlider').value      = 5;
-  document.getElementById('intensityVal').textContent   = 5;
-  controls.style.opacity      = '0';
-  controls.style.pointerEvents = 'none';
-  document.getElementById('noteText').value = '';
-  document.getElementById('noteCounter').textContent = '0 / 100';
-  document.getElementById('noteCounter').classList.remove('near');
-  resetBg();
-}
+canvas.addEventListener('mousedown', handleTap);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e); }, {passive:false});
 
 function advanceStep() {
-  if (!captured[currentSide]) return;
-  captured[currentSide].note = document.getElementById('noteText').value.trim();
-  if (step === 0) {
-    document.getElementById('wheelContainer').classList.add('locked');
-    setTimeout(function() { loadStep(1); }, 500);
+  if(step === 0) {
+    captured.pre.note = document.getElementById('noteText').value;
+    step = 1;
+    document.getElementById('stepLabel').textContent = "Post-Session Affect";
+    document.getElementById('wheelPin').style.display = 'none';
+    document.getElementById('readoutEmotion').textContent = '';
+    document.getElementById('readoutFamily').textContent = '';
+    document.getElementById('noteText').value = '';
+    document.getElementById('stepBtn').disabled = true;
+    
+    const controls = document.getElementById('controls');
+    controls.style.opacity = '0';
+    controls.style.pointerEvents = 'none';
+    
+    document.body.style.backgroundColor = 'rgb(14,15,19)';
+    document.querySelectorAll('.segment-label').forEach(l => l.classList.remove('active'));
   } else {
+    captured.post.note = document.getElementById('noteText').value;
     showSummary();
   }
 }
 
 function showSummary() {
-  var pre  = captured.pre  || {};
-  var post = captured.post || {};
-
-  var cards = document.getElementById('summaryCards');
-  cards.innerHTML = '';
-
-  ['pre', 'post'].forEach(function(side) {
-    var d = side === 'pre' ? pre : post;
-    if (!d.label) return;
-    var card = document.createElement('div');
-    card.className = 'summary-card';
-    var noteHtml = d.note
-      ? '<div class="sc-sub" style="font-style:italic;margin-top:0.3rem;opacity:0.7">"' + d.note + '"</div>'
-      : '';
-    card.innerHTML =
-      '<div class="sc-label">' + (side === 'pre' ? 'Before' : 'After') + '</div>' +
-      '<div class="sc-emotion"><span class="sc-swatch" style="background:rgb(' + d.r + ',' + d.g + ',' + d.b + ');display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:0.4rem;"></span>' + d.label + '</div>' +
-      '<div class="sc-sub">' + d.family + ' &middot; ' + d.intensity + '/10</div>' +
-      noteHtml;
-    cards.appendChild(card);
-  });
-
-  var msg = '';
-  if (pre.label && post.label) {
-    var shift = (post.intensity || 5) - (pre.intensity || 5);
-    msg = pre.label !== post.label
-      ? '<strong>' + pre.label + ' &rarr; ' + post.label + '.</strong> '
-      : '<strong>Affect held at ' + pre.label + '.</strong> ';
-    if (shift < -1)     msg += 'Intensity dropped ' + Math.abs(shift) + ' points.';
-    else if (shift > 1) msg += 'Intensity rose ' + shift + ' points.';
-    else                msg += 'Intensity roughly stable.';
-  } else {
-    msg = 'Partial record captured.';
-  }
-  document.getElementById('shiftBox').innerHTML = msg;
-
-  if (post.r != null) floodBg(post.r, post.g, post.b, 0.2);
-
   document.getElementById('stepScreen').style.display = 'none';
-  var ss = document.getElementById('summaryScreen');
-  ss.style.display = 'flex';
-  ss.classList.add('fade-up');
+  document.getElementById('summaryScreen').style.display = 'flex';
+  
+  document.getElementById('summaryCards').innerHTML = ['pre', 'post'].map(k => `
+    <div class="summary-card">
+      <div style="font-size:0.6rem; opacity:0.5; margin-bottom:0.6rem; letter-spacing:0.1em; text-transform:uppercase;">${k}</div>
+      <div style="font-family:'DM Serif Display'; font-size:1.8rem; margin-bottom:0.5rem;">${captured[k].label}</div>
+      <div style="font-size:0.75rem; color:${captured[k].hex}; font-weight:700; display:flex; align-items:center; gap:0.4rem;">
+        <div style="width:12px; height:12px; border-radius:50%; background:${captured[k].hex}; border:1px solid rgba(255,255,255,0.2);"></div>
+        ${captured[k].hex}
+      </div>
+      <div style="font-size:0.75rem; margin-top:0.6rem; opacity:0.7;">Intensity: ${captured[k].intensity}/10</div>
+    </div>
+  `).join('');
+
+  const diff = captured.post.intensity - captured.pre.intensity;
+  document.getElementById('shiftBox').innerHTML = `
+    Shifted from <strong>${captured.pre.label}</strong> to <strong>${captured.post.label}</strong>.<br>
+    Intensity change: <strong>${diff > 0 ? '+' : ''}${diff} points</strong>.
+  `;
+  floodBg(captured.post.r, captured.post.g, captured.post.b, 0.25);
 }
 
-function saveRecord() {
-  var pid   = document.getElementById('patientId').value.trim() || 'ANON';
-  var stype = document.getElementById('sessionType').value || 'Unknown';
-  var ward  = document.getElementById('ward').value.trim() || '';
-  var pre   = captured.pre  || {};
-  var post  = captured.post || {};
+// THE GOOGLE SHEETS WEBHOOK URL
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwG32LVM1yUOuojKADKUNN80YbVN0RJo6AS1yBLu26cbatyMsEW7DkbaN_c-7FV9Sqc/exec";
 
-  var record = {
-    timestamp:      new Date().toISOString(),
-    patient_id:     pid,
-    session_type:   stype,
-    ward:           ward,
-    pre_emotion:    pre.label    || '',
-    pre_family:     pre.family   || '',
-    pre_intensity:  pre.intensity != null ? pre.intensity : '',
-    pre_hue:        pre.hue      != null ? pre.hue : '',
-    pre_note:       pre.note     || '',
-    post_emotion:   post.label   || '',
-    post_family:    post.family  || '',
-    post_intensity: post.intensity != null ? post.intensity : '',
-    post_hue:       post.hue     != null ? post.hue : '',
-    post_note:      post.note    || ''
+function saveRecord() {
+  const record = {
+    timestamp: new Date().toISOString(),
+    preScore: captured.pre.intensity,
+    postScore: captured.post.intensity,
+    scoreChange: captured.post.intensity - captured.pre.intensity,
+    preHex: captured.pre.hex,
+    postHex: captured.post.hex,
+    preEmotion: captured.pre.label,
+    postEmotion: captured.post.label,
+    preNote: captured.pre.note || "",
+    postNote: captured.post.note || ""
   };
 
+  // 1. Save locally as backup
   records.push(record);
-  try { localStorage.setItem('mt_affect_records', JSON.stringify(records)); } catch(e) {}
+  localStorage.setItem('affective_colour_logs', JSON.stringify(records));
 
-  // Reset for next patient
-  captured.pre = null; captured.post = null;
-  document.getElementById('patientId').value   = '';
-  document.getElementById('ward').value        = '';
-  document.getElementById('sessionType').value = '';
-  document.getElementById('summaryScreen').style.display = 'none';
-  document.getElementById('summaryScreen').classList.remove('fade-up');
-  document.getElementById('stepScreen').style.display = 'flex';
-  loadStep(0);
+  // 2. Change button text to show it's working
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = "Syncing...";
+  btn.disabled = true;
+
+  // 3. Send to Google Sheets
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    mode: 'no-cors', 
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(record)
+  }).then(() => {
+    alert('Session Logged & Synced to Sheet.');
+    location.reload();
+  }).catch(err => {
+    alert('Saved locally, but sync failed. Check connection.');
+    location.reload();
+  });
 }
 
 function exportCSV() {
-  if (!records.length) { alert('No records yet.'); return; }
-  var keys = Object.keys(records[0]);
-  var rows = [keys.join(',')];
-  for (var i = 0; i < records.length; i++) {
-    var r = records[i];
-    rows.push(keys.map(function(k) { return '"' + r[k] + '"'; }).join(','));
-  }
-  var blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'mt_affect_' + new Date().toISOString().slice(0, 10) + '.csv';
+  if(!records.length) return alert("No logs found to export.");
+  const keys = Object.keys(records[0]);
+  const csv = [keys.join(","), ...records.map(r => keys.map(k => `"${(r[k]||'').toString().replace(/"/g, '""')}"`).join(","))].join("\n");
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Affective_Colour_Log_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
-
-// Boot straight to wheel
-loadStep(0);
 </script>
 </body>
 </html>
