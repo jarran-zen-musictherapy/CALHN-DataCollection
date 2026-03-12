@@ -2,177 +2,278 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Music Therapy — Mood</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #FAFAF8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  #app { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 24px; }
+  
+  #app { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; padding: 24px; }
+  
+  .header { text-align: center; margin-bottom: 28px; }
+  .header-sub { font-size: 12px; color: #94A3B8; letter-spacing: 0.06em; margin-bottom: 4px; text-transform: uppercase; }
+  .header-title { font-size: 28px; font-weight: 600; color: #1E293B; letter-spacing: -0.02em; }
+
+  .row-container { text-align: center; margin-bottom: 16px; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); opacity: 0; transform: translateY(24px); pointer-events: none; }
+  .row-container.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .row-label { font-size: 13px; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  
+  .faces-wrapper { display: flex; justify-content: center; gap: 6px; }
+  .face-btn { background: none; border: none; cursor: pointer; padding: 0; outline: none; transition: transform 0.15s ease, opacity 0.15s ease; width: 45px; height: 45px; }
+  .face-btn:hover { transform: scale(1.1); }
+  .face-btn.selected { transform: scale(1.2); }
+  .face-btn.muted { opacity: 0.3; }
+
+  .notes-container { width: 100%; margin-top: 20px; transition: all 0.4s ease; opacity: 0; transform: translateY(16px); pointer-events: none; }
+  .notes-container.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .notes-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0; font-size: 14px; outline: none; resize: none; font-family: inherit; }
+  
+  .submit-btn-container { text-align: center; margin-top: 24px; transition: all 0.35s ease; opacity: 0; pointer-events: none; }
+  .submit-btn-container.visible { opacity: 1; pointer-events: auto; }
+  .submit-btn { padding: 16px 60px; border-radius: 14px; border: none; background: #2E8B57; color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 10px rgba(46,139,87,0.3); transition: background 0.2s; }
+  .submit-btn:disabled { background: #94A3B8; cursor: not-allowed; box-shadow: none; }
+
+  /* Success Screen Styles */
+  #success-screen { display: none; text-align: center; width: 100%; }
+  .success-card { background: #fff; border-radius: 20px; padding: 32px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: inline-block; width: 100%; max-width: 400px; }
+  .success-title { margin-bottom: 20px; color: #2E8B57; font-size: 24px; }
+  .result-flex { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 24px; }
+  .result-col { display: flex; flex-direction: column; align-items: center; }
+  .result-label { font-size: 12px; color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arrow { font-size: 26px; color: #CBD5E1; }
+  .change-box { padding: 8px 18px; border-radius: 12px; }
+  .change-val { font-size: 30px; font-weight: 700; line-height: 1; margin-top: 4px; }
+  .new-btn { padding: 14px 40px; border-radius: 12px; border: 2px solid #E2E8F0; background: #fff; color: #475569; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;}
 </style>
 </head>
 <body>
-<div id="app"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<div id="app">
+  <div id="form-screen" style="width: 100%;">
+    <div class="header">
+      <div class="header-sub">CALHN MUSIC THERAPY</div>
+      <div class="header-title">How are you feeling?</div>
+    </div>
+
+    <div class="row-container visible" id="pre-row">
+      <div class="row-label">Before Session</div>
+      <div class="faces-wrapper" id="pre-faces"></div>
+    </div>
+
+    <div class="row-container" id="post-row">
+      <div class="row-label">After Session</div>
+      <div class="faces-wrapper" id="post-faces"></div>
+    </div>
+
+    <div class="notes-container" id="notes-row">
+      <div class="row-label" style="text-align: center;">Notes / Feedback</div>
+      <textarea id="notes-input" class="notes-input" rows="3" placeholder="Optional session notes..."></textarea>
+    </div>
+
+    <div class="submit-btn-container" id="submit-row">
+      <button class="submit-btn" id="submit-btn" onclick="submitData()">Done ✓</button>
+    </div>
+  </div>
+
+  <div id="success-screen">
+    <div class="success-card">
+      <h2 class="success-title">Success! ✓</h2>
+      <div class="result-flex">
+        <div class="result-col">
+          <div class="result-label">Before</div>
+          <div id="res-pre-face"></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="result-col">
+          <div class="result-label">After</div>
+          <div id="res-post-face"></div>
+        </div>
+      </div>
+      <div class="change-box" id="res-change-box">
+        <div class="result-label" style="margin:0;">Change</div>
+        <div class="change-val" id="res-change-val"></div>
+      </div>
+      <button class="new-btn" onclick="resetForm()">Start New Entry</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const e = React.createElement;
-const { useState, useEffect } = React;
+  // ==========================================
+  // 1. PASTE YOUR GOOGLE SCRIPT WEB APP URL HERE
+  // ==========================================
+  const WEB_APP_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
-const FACE_COUNT = 7;
-const FACES = Array.from({ length: FACE_COUNT }, (_, i) => {
-  const t = i / (FACE_COUNT - 1);
-  return {
-    score: i + 1,
-    color: `hsl(${t * 140}, ${65 + t * 10}%, ${42 + t * 8}%)`,
-    bg: `hsl(${t * 140}, ${65 + t * 10}%, 95%)`,
-    t,
-  };
-});
+  // ==========================================
+  // 2. FACE GENERATOR LOGIC (Math from original)
+  // ==========================================
+  const FACE_COUNT = 7;
+  let preValue = null;
+  let postValue = null;
 
-function Smiley({ face, size, selected, muted, onTap }) {
-  size = size || 80;
-  const cx = size / 2, cy = size / 2, r = size * 0.42;
-  const eyeY = cy - r * 0.15, esp = r * 0.36, er = size * 0.05;
-  const my = cy + r * 0.24, mw = r * 0.48;
-  const curve = -10 + face.t * 22;
-  const sc = selected ? '#fff' : '#555';
-
-  let eyes;
-  if (face.t < 0.35) {
-    eyes = [
-      e('ellipse', { key: 'el', cx: cx - esp, cy: eyeY, rx: er, ry: er * 1.3, fill: sc }),
-      e('ellipse', { key: 'er', cx: cx + esp, cy: eyeY, rx: er, ry: er * 1.3, fill: sc }),
-    ];
-  } else if (face.t > 0.65) {
-    eyes = [
-      e('path', { key: 'el', d: `M ${cx-esp-er*1.3} ${eyeY} Q ${cx-esp} ${eyeY-er*2.2}, ${cx-esp+er*1.3} ${eyeY}`, stroke: sc, strokeWidth: 2, fill: 'none', strokeLinecap: 'round' }),
-      e('path', { key: 'er', d: `M ${cx+esp-er*1.3} ${eyeY} Q ${cx+esp} ${eyeY-er*2.2}, ${cx+esp+er*1.3} ${eyeY}`, stroke: sc, strokeWidth: 2, fill: 'none', strokeLinecap: 'round' }),
-    ];
-  } else {
-    eyes = [
-      e('circle', { key: 'el', cx: cx - esp, cy: eyeY, r: er, fill: sc }),
-      e('circle', { key: 'er', cx: cx + esp, cy: eyeY, r: er, fill: sc }),
-    ];
+  function getFaceData(score) {
+    const i = score - 1;
+    const t = i / (FACE_COUNT - 1);
+    return {
+      score: score,
+      color: `hsl(${t * 140}, ${65 + t * 10}%, ${42 + t * 8}%)`,
+      bg: `hsl(${t * 140}, ${65 + t * 10}%, 95%)`,
+      t: t
+    };
   }
 
-  return e('button', {
-    onClick: () => onTap(face.score),
-    style: {
-      background: 'none', border: 'none', cursor: 'pointer', padding: 0, outline: 'none',
-      transition: 'transform 0.15s ease, opacity 0.15s ease',
-      transform: selected ? 'scale(1.2)' : 'scale(1)',
-      opacity: muted ? 0.3 : 1,
-    },
-    'aria-label': 'Score ' + face.score,
-  },
-    e('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}` },
-      e('circle', { cx, cy, r, fill: selected ? face.color : face.bg, stroke: face.color, strokeWidth: selected ? 3.5 : 2 }),
-      ...eyes,
-      e('path', { d: `M ${cx-mw} ${my} Q ${cx} ${my+curve}, ${cx+mw} ${my}`, stroke: sc, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' }),
-    )
-  );
-}
+  function createFaceSVG(face, isSelected, size) {
+    const cx = size / 2, cy = size / 2, r = size * 0.42;
+    const eyeY = cy - r * 0.15, esp = r * 0.36, er = size * 0.05;
+    const my = cy + r * 0.24, mw = r * 0.48;
+    const curve = -10 + face.t * 22;
+    const sc = isSelected ? '#fff' : '#555';
+    const fill = isSelected ? face.color : face.bg;
+    const strokeWidth = isSelected ? 3.5 : 2;
 
-function FaceRow({ label, faces, value, onTap, visible }) {
-  return e('div', {
-    style: {
-      textAlign: 'center', marginBottom: 16,
-      transition: 'all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'translateY(0)' : 'translateY(24px)',
-      pointerEvents: visible ? 'auto' : 'none',
+    let eyesHTML = '';
+    if (face.t < 0.35) { // Sad
+      eyesHTML = `
+        <ellipse cx="${cx - esp}" cy="${eyeY}" rx="${er}" ry="${er * 1.3}" fill="${sc}" />
+        <ellipse cx="${cx + esp}" cy="${eyeY}" rx="${er}" ry="${er * 1.3}" fill="${sc}" />`;
+    } else if (face.t > 0.65) { // Happy
+      eyesHTML = `
+        <path d="M ${cx-esp-er*1.3} ${eyeY} Q ${cx-esp} ${eyeY-er*2.2}, ${cx-esp+er*1.3} ${eyeY}" stroke="${sc}" stroke-width="2" fill="none" stroke-linecap="round" />
+        <path d="M ${cx+esp-er*1.3} ${eyeY} Q ${cx+esp} ${eyeY-er*2.2}, ${cx+esp+er*1.3} ${eyeY}" stroke="${sc}" stroke-width="2" fill="none" stroke-linecap="round" />`;
+    } else { // Neutral
+      eyesHTML = `
+        <circle cx="${cx - esp}" cy="${eyeY}" r="${er}" fill="${sc}" />
+        <circle cx="${cx + esp}" cy="${eyeY}" r="${er}" fill="${sc}" />`;
     }
-  },
-    e('div', { style: { fontSize: 13, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 } }, label),
-    e('div', { style: { display: 'flex', justifyContent: 'center', gap: 8 } },
-      faces.map(f => e(Smiley, {
-        key: f.score, face: f, size: 80,
-        selected: value === f.score,
-        muted: value !== null && value !== f.score,
-        onTap,
-      }))
-    )
-  );
-}
 
-function App() {
-  const [pre, setPre] = useState(null);
-  const [post, setPost] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [showPost, setShowPost] = useState(false);
-  const [showDone, setShowDone] = useState(false);
-
-  useEffect(() => {
-    if (pre !== null && !showPost) {
-      const t = setTimeout(() => setShowPost(true), 300);
-      return () => clearTimeout(t);
-    }
-  }, [pre, showPost]);
-
-  useEffect(() => {
-    if (post !== null && !showDone) {
-      const t = setTimeout(() => setShowDone(true), 200);
-      return () => clearTimeout(t);
-    }
-  }, [post, showDone]);
-
-  const reset = () => {
-    setPre(null); setPost(null);
-    setSubmitted(false); setShowPost(false); setShowDone(false);
-  };
-
-  if (submitted) {
-    const diff = post - pre;
-    const ds = diff > 0 ? '+' + diff : '' + diff;
-    const dc = diff > 0 ? '#2E8B57' : diff < 0 ? '#D94F4F' : '#64748B';
-    return e('div', { style: { textAlign: 'center' } },
-      e('div', { style: { background: '#fff', borderRadius: 20, padding: '32px 40px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'inline-block' } },
-        e('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, marginBottom: 24 } },
-          e('div', null,
-            e('div', { style: { fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 } }, 'Before'),
-            e(Smiley, { face: FACES[pre - 1], size: 60, selected: true, onTap: () => {} }),
-          ),
-          e('div', { style: { fontSize: 26, color: '#CBD5E1' } }, '→'),
-          e('div', null,
-            e('div', { style: { fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 } }, 'After'),
-            e(Smiley, { face: FACES[post - 1], size: 60, selected: true, onTap: () => {} }),
-          ),
-          e('div', { style: { padding: '8px 18px', borderRadius: 12, background: diff > 0 ? '#ECFDF5' : diff < 0 ? '#FEF2F2' : '#F8FAFC' } },
-            e('div', { style: { fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 } }, 'Change'),
-            e('div', { style: { fontSize: 30, fontWeight: 700, color: dc, lineHeight: 1 } }, ds),
-          ),
-        ),
-        e('button', { onClick: reset, style: { padding: '14px 40px', borderRadius: 12, border: '2px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 16, fontWeight: 600, cursor: 'pointer' } }, 'New'),
-      )
-    );
+    return `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${face.color}" stroke-width="${strokeWidth}" />
+        ${eyesHTML}
+        <path d="M ${cx-mw} ${my} Q ${cx} ${my+curve}, ${cx+mw} ${my}" stroke="${sc}" stroke-width="2.2" fill="none" stroke-linecap="round" />
+      </svg>`;
   }
 
-  return e('div', { style: { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' } },
-    e('div', { style: { textAlign: 'center', marginBottom: 28 } },
-      e('div', { style: { fontSize: 12, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: 4 } }, 'CALHN MUSIC THERAPY'),
-      e('h1', { style: { fontSize: 28, fontWeight: 600, color: '#1E293B', letterSpacing: '-0.02em' } }, 'How are you feeling?'),
-    ),
-    e(FaceRow, { label: 'Before Session', faces: FACES, value: pre, onTap: v => setPre(v), visible: true }),
-    e(FaceRow, { label: 'After Session', faces: FACES, value: post, onTap: v => setPost(v), visible: showPost }),
-    e('div', {
-      style: {
-        textAlign: 'center', marginTop: 8,
-        transition: 'all 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
-        opacity: showDone ? 1 : 0,
-        transform: showDone ? 'translateY(0)' : 'translateY(16px)',
-        pointerEvents: showDone ? 'auto' : 'none',
+  // ==========================================
+  // 3. UI RENDERING AND INTERACTION
+  // ==========================================
+  function renderFaces(containerId, type, selectedValue) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ''; // Clear existing
+
+    for (let i = 1; i <= FACE_COUNT; i++) {
+      const faceData = getFaceData(i);
+      const isSelected = selectedValue === i;
+      const isMuted = selectedValue !== null && selectedValue !== i;
+      
+      const btn = document.createElement('button');
+      btn.className = `face-btn ${isSelected ? 'selected' : ''} ${isMuted ? 'muted' : ''}`;
+      btn.innerHTML = createFaceSVG(faceData, isSelected, 45); // Size 45 for standard view
+      
+      btn.onclick = () => handleFaceClick(type, i);
+      container.appendChild(btn);
+    }
+  }
+
+  function handleFaceClick(type, score) {
+    if (type === 'pre') {
+      preValue = score;
+      renderFaces('pre-faces', 'pre', preValue);
+      setTimeout(() => document.getElementById('post-row').classList.add('visible'), 300);
+    } else {
+      postValue = score;
+      renderFaces('post-faces', 'post', postValue);
+      setTimeout(() => {
+        document.getElementById('notes-row').classList.add('visible');
+        document.getElementById('submit-row').classList.add('visible');
+      }, 200);
+    }
+  }
+
+  // ==========================================
+  // 4. SUBMISSION LOGIC
+  // ==========================================
+  function submitData() {
+    const btn = document.getElementById('submit-btn');
+    const notes = document.getElementById('notes-input').value;
+    
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+
+    const payload = { pre: preValue, post: postValue, notes: notes };
+
+    fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(response => {
+      if(response.status === 'success') {
+        showSuccessScreen();
+      } else {
+        alert("Server Error: " + response.message);
+        btn.disabled = false;
+        btn.innerText = "Done ✓";
       }
-    },
-      e('button', {
-        onClick: () => setSubmitted(true),
-        style: { padding: '18px 64px', borderRadius: 14, border: 'none', background: '#2E8B57', color: '#fff', fontSize: 20, fontWeight: 600, cursor: 'pointer', boxShadow: '0 3px 10px rgba(46,139,87,0.3)' },
-      }, 'Done ✓'),
-    ),
-  );
-}
+    })
+    .catch(err => {
+      alert("Connection failed. Check your Web App URL.");
+      btn.disabled = false;
+      btn.innerText = "Done ✓";
+    });
+  }
 
-ReactDOM.createRoot(document.getElementById('app')).render(e(App));
+  function showSuccessScreen() {
+    document.getElementById('form-screen').style.display = 'none';
+    const successScreen = document.getElementById('success-screen');
+    successScreen.style.display = 'block';
+
+    // Calculate difference
+    const diff = postValue - preValue;
+    const diffString = diff > 0 ? '+' + diff : diff.toString();
+    const diffColor = diff > 0 ? '#2E8B57' : diff < 0 ? '#D94F4F' : '#64748B';
+    const diffBg = diff > 0 ? '#ECFDF5' : diff < 0 ? '#FEF2F2' : '#F8FAFC';
+
+    // Render big summary faces
+    document.getElementById('res-pre-face').innerHTML = createFaceSVG(getFaceData(preValue), true, 60);
+    document.getElementById('res-post-face').innerHTML = createFaceSVG(getFaceData(postValue), true, 60);
+    
+    const changeBox = document.getElementById('res-change-box');
+    changeBox.style.backgroundColor = diffBg;
+    
+    const changeVal = document.getElementById('res-change-val');
+    changeVal.innerText = diffString;
+    changeVal.style.color = diffColor;
+  }
+
+  function resetForm() {
+    preValue = null;
+    postValue = null;
+    document.getElementById('notes-input').value = "";
+    
+    // Hide rows
+    document.getElementById('post-row').classList.remove('visible');
+    document.getElementById('notes-row').classList.remove('visible');
+    document.getElementById('submit-row').classList.remove('visible');
+    
+    // Reset button
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = false;
+    btn.innerText = "Done ✓";
+
+    // Switch screens
+    document.getElementById('success-screen').style.display = 'none';
+    document.getElementById('form-screen').style.display = 'block';
+    
+    // Re-render initial state
+    renderFaces('pre-faces', 'pre', null);
+    renderFaces('post-faces', 'post', null);
+  }
+
+  // Initialize first row on load
+  renderFaces('pre-faces', 'pre', null);
+  renderFaces('post-faces', 'post', null);
+
 </script>
 </body>
 </html>
