@@ -124,7 +124,6 @@
             <div class="btn-group" style="margin-top: 10px;">
                 <span class="chart-type-label">Chart type:</span>
                 <button class="ctype-btn active" onclick="setChartType('bar', this)">&#9646;&#9646; Stacked Bar</button>
-                <!-- <button class="ctype-btn" onclick="setChartType('line', this)">&#8623; Stacked Line</button> -->
                 <button class="ctype-btn" onclick="setChartType('pie', this)">&#9711; Pie</button>
             </div>
 
@@ -304,14 +303,11 @@
             var monthRaw = cols[0] ? cols[0].trim() : '';
             var yearRaw  = cols[1] ? cols[1].trim() : '';
             
-            var c2 = cols[2] ? cols[2].trim() : '';
-            var c3 = cols[3] ? cols[3].trim() : '';
-            var c4 = cols[4] ? cols[4].trim() : '';
-            var c5 = cols[5] ? cols[5].trim() : '';
-            var c6 = cols[6] ? cols[6].trim() : '';
-            var c7 = cols[7] ? cols[7].trim() : '';
+            var c2 = cols[2] ? cols[2].trim() : ''; // CALD
+            var c3 = cols[3] ? cols[3].trim() : ''; // ATSI
+            var c4 = cols[4] ? cols[4].trim() : ''; // SES
             
-            var hasData = c2 || c3 || c4 || c5 || c6 || c7;
+            var hasData = c2 || c3 || c4;
             
             if (monthRaw && yearRaw && hasData) {
                 var mLower = monthRaw.toLowerCase().substring(0, 3);
@@ -324,9 +320,9 @@
                     month: monthRaw,
                     year: parseInt(yearRaw, 10),
                     monthIdx: mIdx,
-                    cald: (parseInt(c2, 10) || 0) + (parseInt(c3, 10) || 0),
-                    atsi: (parseInt(c4, 10) || 0) + (parseInt(c5, 10) || 0),
-                    ses:  (parseInt(c6, 10) || 0) + (parseInt(c7, 10) || 0)
+                    cald: parseInt(c2, 10) || 0,
+                    atsi: parseInt(c3, 10) || 0,
+                    ses:  parseInt(c4, 10) || 0
                 });
             }
         }
