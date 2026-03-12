@@ -194,5 +194,17 @@
             Last updated: March 2026
         </div>
     </div>
+<script>
+  window.addEventListener('load', () => {
+    const y = sessionStorage.getItem('indexScrollY');
+    if (y !== null) {
+      window.scrollTo(0, +y);
+      sessionStorage.removeItem('indexScrollY');
+    }
+  });
+  window.addEventListener('pagehide', () => {
+    sessionStorage.setItem('indexScrollY', window.scrollY);
+  });
+</script>
 </body>
 </html>
