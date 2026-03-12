@@ -26,5 +26,4 @@ This is a simple checklist to guide you through the process of identifying and f
 - [ ] Communicate the fix: Inform team members or users if necessary
 - [ ] Learn from the bug: Consider what could prevent similar issues in the future
 
-Remember, patience and systematic approach are key to effective bug hunting!</content>
-<parameter name="filePath">\\had.sa.gov.au\NSRAH\Users\jzen03\GitHub\CALHN-DataCollection\bug_hunting_checklist.md
+Remember, patience and systematic approach are key to effective bug hunting!
