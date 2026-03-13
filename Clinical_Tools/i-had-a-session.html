@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="theme-color" content="#0d1117" />
-<link rel="manifest" href="/CALHN-DataCollection/manifest.json" />
+<link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/i-had-a-session.manifest.json" />
 <link rel="apple-touch-icon" href="/CALHN-DataCollection/icon-192.png" />
 <title>Clinician Observed Mood Change — CALHN MT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -367,7 +367,6 @@
 <body>
 <div id="app">
 
-  <!-- Header -->
   <div id="header">
     <div id="header-icon">♬</div>
     <div>
@@ -381,39 +380,32 @@
     </div>
   </div>
 
-  <!-- Main -->
   <div id="main">
 
-    <!-- ── ENTRY VIEW ── -->
     <div id="view-entry" class="view active">
 
-      <!-- Mode toggle -->
       <div class="mode-toggle">
         <button class="mode-btn active" id="mode-live" onclick="setMode('live')">Live session</button>
         <button class="mode-btn" id="mode-retro" onclick="setMode('retro')">Retrospective</button>
       </div>
 
-      <!-- Retro date -->
       <div id="retro-date-section">
         <div class="section-label">Session Date &amp; Time</div>
         <input type="datetime-local" id="retro-date" />
       </div>
 
-      <!-- Pre score -->
       <div class="score-section" id="pre-section">
         <div class="section-label">Observed Mood — Pre</div>
         <div class="score-grid" id="pre-grid"></div>
         <div class="score-anchor" id="pre-anchor"></div>
       </div>
 
-      <!-- Post score -->
       <div class="score-section" id="post-section">
         <div class="section-label">Observed Mood — Post</div>
         <div class="score-grid" id="post-grid"></div>
         <div class="score-anchor" id="post-anchor"></div>
       </div>
 
-      <!-- Delta preview -->
       <div id="delta-card">
         <div class="delta-col">
           <div class="delta-label">PRE</div>
@@ -430,26 +422,20 @@
         </div>
       </div>
 
-      <!-- Note -->
       <div class="note-section">
         <div class="section-label">Note <span class="note-sublabel">(optional)</span></div>
         <input type="text" id="note-input" placeholder="Ward, initials, intervention type…" maxlength="120" />
       </div>
 
-      <!-- Save -->
       <button id="save-btn" onclick="saveSession()" disabled>Log this session</button>
       <div id="sync-status"></div>
 
-      <!-- Scale ref -->
       <div id="scale-ref">
         <div class="section-label">Scale Reference</div>
         <div class="ref-grid" id="ref-grid"></div>
       </div>
 
-    </div><!-- /view-entry -->
-
-    <!-- ── LOG VIEW ── -->
-    <div id="view-log" class="view">
+    </div><div id="view-log" class="view">
       <div id="summary-strip"></div>
       <div id="empty-log">No sessions logged yet.</div>
       <div id="session-list"></div>
@@ -459,12 +445,7 @@
         <button id="confirm-clear-btn" onclick="confirmClear()">Confirm clear</button>
         <button id="cancel-clear-btn" onclick="cancelClear()">Cancel</button>
       </div>
-    </div><!-- /view-log -->
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<script>
+    </div></div></div><script>
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
 (function () {
