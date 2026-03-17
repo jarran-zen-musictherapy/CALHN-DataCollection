@@ -38,33 +38,25 @@
   }
 
   /* ── Header ── */
-  .header { margin-bottom: 24px; }
+  .header { margin-bottom: 24px; text-align: center; }
   .header-eyebrow {
     font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--ink-lt); margin-bottom: 5px;
   }
-  .header-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 3px; }
+  .header-row { display: flex; justify-content: center; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 3px; }
   .header-title { font-size: 20px; font-weight: 600; color: var(--ink); }
   .header-sub   { font-size: 12px; color: var(--ink-mid); }
 
-  .mockup-tag {
-    display: none;
-    background: #FEF3C7; color: #92400E;
-    font-size: 10px; font-weight: 600;
-    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;
-  }
-  .mockup-tag.visible { display: inline-block; }
-
   /* ── Master Toggle ── */
   .view-toggle {
-    display: flex; gap: 0; margin-bottom: 20px;
+    display: flex; gap: 0; margin-bottom: 20px; margin-left: auto; margin-right: auto;
     border: 1.5px solid var(--purple); border-radius: 30px;
     overflow: hidden; width: fit-content;
   }
   .vt-btn {
     padding: 9px 22px; font-size: 13px; font-weight: 500;
     border: none; background: transparent; color: var(--purple);
-    cursor: pointer; transition: all 0.18s; white-space: nowrap;
+    cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
     font-family: 'DM Sans', sans-serif;
   }
   .vt-btn.active { background: var(--purple); color: #fff; }
@@ -76,7 +68,7 @@
 
   .time-btn {
     padding: 8px 18px; border-radius: 22px; cursor: pointer; font-weight: 500;
-    transition: all 0.18s; border: 1.5px solid var(--purple); background: white;
+    transition: all 0.2s ease; border: 1.5px solid var(--purple); background: white;
     color: var(--purple); font-size: 13px; line-height: 1.2;
     font-family: 'DM Sans', sans-serif;
   }
@@ -86,7 +78,7 @@
 
   .ctype-btn {
     padding: 8px 18px; border-radius: 22px; cursor: pointer; font-weight: 500;
-    transition: all 0.18s; border: 1.5px solid var(--blue); background: white;
+    transition: all 0.2s ease; border: 1.5px solid var(--blue); background: white;
     color: var(--blue); font-size: 13px; display: flex; align-items: center; gap: 5px;
     font-family: 'DM Sans', sans-serif;
   }
@@ -96,9 +88,10 @@
   .export-btn {
     padding: 9px 20px; border-radius: 22px; cursor: pointer; font-size: 13px;
     font-weight: 500; border: none; background: var(--blue); color: #fff;
-    font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+    font-family: 'DM Sans', sans-serif; transition: opacity 0.2s ease, transform 0.1s;
   }
-  .export-btn:hover { opacity: 0.88; }
+  .export-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .export-btn:active { transform: translateY(0); }
   .export-btn.red   { background: #c0392b; }
 
   /* ── Chart View ── */
@@ -152,12 +145,8 @@
     background: var(--white); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 22px;
   }
-  .pp-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink-lt); margin-bottom: 3px;
-  }
   .pp-mode {
-    font-size: 13px; font-weight: 500; color: var(--ink-mid);
+    font-size: 16px; font-weight: 600; color: var(--ink);
     padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border);
   }
   .pp-num {
@@ -203,7 +192,9 @@
   .bd-table td {
     padding: 9px 8px; font-size: 12px; color: var(--ink);
     text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle;
+    transition: background-color 0.15s ease;
   }
+  .bd-table tbody tr:hover td { background-color: var(--surface); }
   .bd-table tr:last-child td { border-bottom: none; }
   .bd-table td:first-child { text-align: left; padding-left: 0; }
   .gl { display: flex; align-items: center; gap: 7px; font-size: 12px; }
@@ -218,11 +209,28 @@
     font-size: 10px; color: var(--ink-lt); line-height: 1.65;
     font-style: italic; border-top: 1px solid var(--border);
     padding-top: 12px; margin-top: 4px;
+    text-align: center;
   }
 
+  /* Loading State */
   #loading {
-    text-align: center; font-size: 16px; font-weight: 500;
-    color: var(--purple); padding: 60px 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; font-size: 14px; font-weight: 500; color: var(--purple); padding: 60px 0;
+  }
+  .spinner {
+    width: 30px; height: 30px; border: 3px solid var(--purple-l);
+    border-top: 3px solid var(--purple); border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  /* ── Export Mode Overrides ── */
+  .export-mode .view-toggle,
+  .export-mode .controls {
+    display: none !important;
+  }
+  .export-mode {
+    background: var(--surface); /* Ensure background is painted clean */
   }
 
   @media (max-width: 600px) {
@@ -236,25 +244,25 @@
 <div id="capture-area">
 
   <div class="header">
-    <div class="header-eyebrow">KRA 3 · Priority Groups · Creative Therapies</div>
+    <div class="header-eyebrow">Priority Groups · Creative Therapies</div>
     <div class="header-row">
       <div class="header-title">Music Therapy — Priority Groups</div>
-      <span class="mockup-tag" id="mockup-tag">ILLUSTRATIVE INDIVIDUALS</span>
     </div>
     <div class="header-sub">CALD · Aboriginal &amp; Torres Strait Islander · Vulnerable / Low SES</div>
   </div>
 
-  <div id="loading">Gathering data from Google Sheets...</div>
+  <div id="loading">
+    <div class="spinner"></div>
+    Gathering data from Google Sheets...
+  </div>
 
   <div id="main-content" style="display:none">
 
-    <!-- Master view toggle -->
     <div class="view-toggle">
       <button class="vt-btn active" id="btn-oos"   onclick="setView('oos')">&#9646;&#9646; Sessions (OoS)</button>
       <button class="vt-btn"        id="btn-reach" onclick="setView('reach')">&#128101; People Reached</button>
     </div>
 
-    <!-- Shared period + chart-type controls -->
     <div class="controls" id="controls">
       <div class="btn-group">
         <button class="time-btn" onclick="setPeriod('2025',this)">2025</button>
@@ -268,7 +276,6 @@
         <button class="time-btn" onclick="setPeriod('thrf4',this)">THRF 4<small>Mar–Aug 27</small></button>
       </div>
 
-      <!-- Chart type: only shown in OoS view -->
       <div class="btn-group" id="chart-type-row">
         <span style="font-size:12px;font-weight:600;color:var(--ink-lt);display:flex;align-items:center;margin-right:4px">CHART TYPE:</span>
         <button class="ctype-btn active" onclick="setChartType('bar',this)">&#9646;&#9646; Stacked Bar</button>
@@ -281,7 +288,6 @@
       </div>
     </div>
 
-    <!-- ── OoS Chart View ── -->
     <div id="view-chart">
       <div class="chart-wrap">
         <div class="chart-inner"><canvas id="pgChart"></canvas></div>
@@ -304,12 +310,10 @@
       <p style="text-align:center;font-size:11px;color:var(--ink-lt);font-style:italic;margin-top:4px" id="chart-legend-note"></p>
     </div>
 
-    <!-- ── People Reached Pictogram View ── -->
     <div id="view-picto">
 
       <div class="picto-cols">
         <div class="picto-panel">
-          <div class="pp-label">For reference</div>
           <div class="pp-mode">Occasions of Service</div>
           <div class="pp-num" id="p-oos-num">-</div>
           <div class="pp-num-sub">sessions with priority group patients</div>
@@ -326,10 +330,9 @@
         </div>
 
         <div class="picto-panel">
-          <div class="pp-label">Proposed reporting</div>
-          <div class="pp-mode">Unique individuals reached</div>
+          <div class="pp-mode">Reach</div>
           <div class="pp-num" id="p-ind-num">-</div>
-          <div class="pp-num-sub">estimated priority group individuals seen</div>
+          <div class="pp-num-sub">estimated unique individuals seen</div>
           <div class="pp-scale">
             <svg width="12" height="17" viewBox="0 0 12 17"><circle cx="6" cy="4.5" r="3" fill="var(--ink-lt)"/><rect x="2" y="8" width="8" height="7.5" rx="2.5" fill="var(--ink-lt)" opacity="0.85"/></svg>
             each figure = 10 individuals
@@ -397,7 +400,6 @@
         </table>
       </div>
 
-      <!-- Summary cards for pictogram view -->
       <div class="summary">
         <div class="card coral"><h3>CALD Individuals</h3><div class="val" id="p-cald-val">-</div><div class="sub" id="p-cald-sub">-</div></div>
         <div class="card blue"><h3>ATSI Individuals</h3><div class="val" id="p-atsi-val">-</div><div class="sub" id="p-atsi-sub">-</div></div>
@@ -414,19 +416,15 @@
         </div>
       </div>
 
-    </div><!-- /view-picto -->
-
-    <div class="footer-note" id="footer-note">
+    </div><div class="footer-note" id="footer-note">
       Music Therapy · RAH (Patsy Tan) + QEH (Jarran Zen) · Data via Google Sheets / Sunrise EMR.
+      <br>
       <span id="footer-picto-note" style="display:none">
         Individual estimates derived from OoS data using average session frequency per group (CALD 2.3, ATSI 2.2, Vulnerable 2.9). Systematic individual-level tracking not yet in place — proposed as a QI initiative for the next reporting period.
       </span>
     </div>
 
-  </div><!-- /main-content -->
-</div><!-- /capture-area -->
-
-<script>
+  </div></div><script>
 var SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQTtsFTBW5bK9RBxbWu0IUltxUspuQwjxZhyzx2SmHL-QQObGfHfZ5Sf5GGrHNh_C6NXACQ5LeOGBqd/pub?output=csv';
 
 var rawData = [];
@@ -505,6 +503,11 @@ function parseCSV(csv) {
     var c2=+(cols[2]||0), c3=+(cols[3]||0), c4=+(cols[4]||0),
         c5=+(cols[5]||0), c6=+(cols[6]||0), c7=+(cols[7]||0);
     if (!mo || !yr) continue;
+    
+    // Check if the row has any data before pushing it (filters out future empty months)
+    var rowTotal = c2 + c3 + c4 + c5 + c6 + c7;
+    if (rowTotal === 0) continue; 
+
     var mLow = mo.toLowerCase().substring(0,3);
     var mi = MONTHS.findIndex(function(m){ return m.toLowerCase()===mLow; });
     rawData.push({
@@ -672,7 +675,6 @@ function setView(v) {
   document.getElementById('chart-type-row').style.display = v==='oos' ? 'flex' : 'none';
   document.getElementById('btn-oos').classList.toggle('active',   v==='oos');
   document.getElementById('btn-reach').classList.toggle('active', v==='reach');
-  document.getElementById('mockup-tag').classList.toggle('visible', v==='reach');
   document.getElementById('footer-picto-note').style.display = v==='reach' ? 'inline' : 'none';
   render();
 }
@@ -694,20 +696,30 @@ function setChartType(t, btn) {
 
 // ── Export ──
 function exportPNG() {
-  html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
-    var a=document.createElement('a');
-    a.download='MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.png';
-    a.href=c.toDataURL(); a.click();
-  });
+  document.body.classList.add('export-mode');
+  // Small timeout to allow the browser to paint the hidden buttons before capturing
+  setTimeout(function() {
+    html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
+      var a=document.createElement('a');
+      a.download='MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.png';
+      a.href=c.toDataURL(); a.click();
+      document.body.classList.remove('export-mode');
+    });
+  }, 50);
 }
+
 function exportPDF() {
-  html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
-    var jsPDF=window.jspdf.jsPDF;
-    var img=c.toDataURL('image/png'),w=c.width/2,h=c.height/2;
-    var pdf=new jsPDF({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
-    pdf.addImage(img,'PNG',0,0,w,h);
-    pdf.save('MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.pdf');
-  });
+  document.body.classList.add('export-mode');
+  setTimeout(function() {
+    html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
+      var jsPDF=window.jspdf.jsPDF;
+      var img=c.toDataURL('image/png'),w=c.width/2,h=c.height/2;
+      var pdf=new jsPDF({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
+      pdf.addImage(img,'PNG',0,0,w,h);
+      pdf.save('MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.pdf');
+      document.body.classList.remove('export-mode');
+    });
+  }, 50);
 }
 
 fetchData();
