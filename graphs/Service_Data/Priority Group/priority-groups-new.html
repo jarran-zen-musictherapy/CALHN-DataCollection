@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Therapy — Priority Groups</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --coral:   #E67E73;
+    --coral-l: #FAF0EF;
+    --blue:    #4A9BC7;
+    --blue-l:  #E5F2F9;
+    --purple:  #9B6B9E;
+    --purple-l:#F2EBF3;
+    --ink:     #1A1A2E;
+    --ink-mid: #4A4A6A;
+    --ink-lt:  #8888AA;
+    --surface: #F7F7F5;
+    --white:   #FFFFFF;
+    --border:  #E4E4EE;
+    --radius:  12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 32px 28px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header { margin-bottom: 24px; }
+  .header-eyebrow {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-lt); margin-bottom: 5px;
+  }
+  .header-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 3px; }
+  .header-title { font-size: 20px; font-weight: 600; color: var(--ink); }
+  .header-sub   { font-size: 12px; color: var(--ink-mid); }
+
+  .mockup-tag {
+    display: none;
+    background: #FEF3C7; color: #92400E;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;
+  }
+  .mockup-tag.visible { display: inline-block; }
+
+  /* ── Master Toggle ── */
+  .view-toggle {
+    display: flex; gap: 0; margin-bottom: 20px;
+    border: 1.5px solid var(--purple); border-radius: 30px;
+    overflow: hidden; width: fit-content;
+  }
+  .vt-btn {
+    padding: 9px 22px; font-size: 13px; font-weight: 500;
+    border: none; background: transparent; color: var(--purple);
+    cursor: pointer; transition: all 0.18s; white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .vt-btn.active { background: var(--purple); color: #fff; }
+  .vt-btn:not(.active):hover { background: var(--purple-l); }
+
+  /* ── Period / Chart Controls ── */
+  .controls { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .btn-group { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+
+  .time-btn {
+    padding: 8px 18px; border-radius: 22px; cursor: pointer; font-weight: 500;
+    transition: all 0.18s; border: 1.5px solid var(--purple); background: white;
+    color: var(--purple); font-size: 13px; line-height: 1.2;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .time-btn small { display: block; font-size: 10px; font-weight: 400; opacity: 0.8; margin-top: 1px; }
+  .time-btn:hover  { background: var(--purple-l); }
+  .time-btn.active { background: var(--purple); color: #fff; }
+
+  .ctype-btn {
+    padding: 8px 18px; border-radius: 22px; cursor: pointer; font-weight: 500;
+    transition: all 0.18s; border: 1.5px solid var(--blue); background: white;
+    color: var(--blue); font-size: 13px; display: flex; align-items: center; gap: 5px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .ctype-btn:hover  { background: var(--blue-l); }
+  .ctype-btn.active { background: var(--blue); color: #fff; }
+
+  .export-btn {
+    padding: 9px 20px; border-radius: 22px; cursor: pointer; font-size: 13px;
+    font-weight: 500; border: none; background: var(--blue); color: #fff;
+    font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+  }
+  .export-btn:hover { opacity: 0.88; }
+  .export-btn.red   { background: #c0392b; }
+
+  /* ── Chart View ── */
+  #view-chart { }
+  #view-chart .chart-wrap {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 18px;
+  }
+  #view-chart .chart-inner { position: relative; height: 420px; }
+
+  /* ── Summary Cards (shared) ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 14px;
+  }
+  .card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+    border-left: 4px solid var(--border);
+  }
+  .card.coral  { border-left-color: var(--coral); }
+  .card.blue   { border-left-color: var(--blue);  }
+  .card.purple { border-left-color: var(--purple);}
+  .card.dark   { border-left-color: var(--ink);   }
+  .card h3 {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--ink-lt); margin-bottom: 8px;
+  }
+  .card .val { font-size: 30px; font-weight: 300; font-family: 'DM Mono', monospace; margin-bottom: 3px; }
+  .card.coral  .val { color: var(--coral);  }
+  .card.blue   .val { color: var(--blue);   }
+  .card.purple .val { color: var(--purple); }
+  .card.dark   .val { color: var(--ink);    }
+  .card .sub { font-size: 12px; color: var(--ink-lt); line-height: 1.4; }
+  .ratio-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .pill {
+    flex: 1; text-align: center; padding: 5px 4px;
+    border-radius: 5px; font-size: 11px; font-weight: 600; min-width: 54px;
+  }
+  .pill.c { background: rgba(230,126,115,0.15); color: #b85a50; }
+  .pill.a { background: rgba(74,155,199,0.15);  color: #2e7399; }
+  .pill.s { background: rgba(155,107,158,0.15); color: #6e4071; }
+
+  /* ── Pictogram View ── */
+  #view-picto { display: none; }
+
+  .picto-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  .picto-panel {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px;
+  }
+  .pp-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-lt); margin-bottom: 3px;
+  }
+  .pp-mode {
+    font-size: 13px; font-weight: 500; color: var(--ink-mid);
+    padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .pp-num {
+    font-size: 44px; font-weight: 300; font-family: 'DM Mono', monospace;
+    color: var(--ink); line-height: 1; letter-spacing: -0.02em; margin-bottom: 2px;
+  }
+  .pp-num-sub { font-size: 11px; color: var(--ink-lt); margin-bottom: 14px; }
+  .pp-scale {
+    font-size: 10px; color: var(--ink-lt); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .pp-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-mid); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .icon-field { display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; min-height: 70px; }
+
+  .insight-bar {
+    background: var(--blue-l); border-left: 3px solid var(--blue);
+    border-radius: 0 8px 8px 0; padding: 12px 16px;
+    display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px;
+  }
+  .ib-num {
+    font-size: 26px; font-weight: 300; font-family: 'DM Mono', monospace;
+    color: var(--blue); line-height: 1; flex-shrink: 0;
+  }
+  .ib-text strong { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 2px; }
+  .ib-text span   { font-size: 12px; color: var(--ink-mid); }
+
+  /* Breakdown table */
+  .breakdown {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 14px;
+  }
+  .bd-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+  .bd-table { width: 100%; border-collapse: collapse; }
+  .bd-table th {
+    font-size: 10px; font-weight: 500; color: var(--ink-lt);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    text-align: right; padding: 0 8px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bd-table th:first-child { text-align: left; padding-left: 0; }
+  .bd-table td {
+    padding: 9px 8px; font-size: 12px; color: var(--ink);
+    text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  .bd-table tr:last-child td { border-bottom: none; }
+  .bd-table td:first-child { text-align: left; padding-left: 0; }
+  .gl { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .tm { font-weight: 500; }
+  .ts { font-size: 10px; color: var(--ink-lt); margin-top: 1px; }
+  .bar-wrap { width: 70px; display: flex; justify-content: flex-end; }
+  .bar-bg { width: 70px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+
+  /* Footer */
+  .footer-note {
+    font-size: 10px; color: var(--ink-lt); line-height: 1.65;
+    font-style: italic; border-top: 1px solid var(--border);
+    padding-top: 12px; margin-top: 4px;
+  }
+
+  #loading {
+    text-align: center; font-size: 16px; font-weight: 500;
+    color: var(--purple); padding: 60px 0;
+  }
+
+  @media (max-width: 600px) {
+    .picto-cols { grid-template-columns: 1fr; }
+    body { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="capture-area">
+
+  <div class="header">
+    <div class="header-eyebrow">KRA 3 · Priority Groups · Creative Therapies</div>
+    <div class="header-row">
+      <div class="header-title">Music Therapy — Priority Groups</div>
+      <span class="mockup-tag" id="mockup-tag">ILLUSTRATIVE INDIVIDUALS</span>
+    </div>
+    <div class="header-sub">CALD · Aboriginal &amp; Torres Strait Islander · Vulnerable / Low SES</div>
+  </div>
+
+  <div id="loading">Gathering data from Google Sheets...</div>
+
+  <div id="main-content" style="display:none">
+
+    <!-- Master view toggle -->
+    <div class="view-toggle">
+      <button class="vt-btn active" id="btn-oos"   onclick="setView('oos')">&#9646;&#9646; Sessions (OoS)</button>
+      <button class="vt-btn"        id="btn-reach" onclick="setView('reach')">&#128101; People Reached</button>
+    </div>
+
+    <!-- Shared period + chart-type controls -->
+    <div class="controls" id="controls">
+      <div class="btn-group">
+        <button class="time-btn" onclick="setPeriod('2025',this)">2025</button>
+        <button class="time-btn" onclick="setPeriod('2026',this)">2026</button>
+        <button class="time-btn active" onclick="setPeriod('all',this)">All Time</button>
+      </div>
+      <div class="btn-group">
+        <button class="time-btn" onclick="setPeriod('thrf1',this)">THRF 1<small>Sep 25–Feb 26</small></button>
+        <button class="time-btn" onclick="setPeriod('thrf2',this)">THRF 2<small>Mar–Aug 26</small></button>
+        <button class="time-btn" onclick="setPeriod('thrf3',this)">THRF 3<small>Sep 26–Feb 27</small></button>
+        <button class="time-btn" onclick="setPeriod('thrf4',this)">THRF 4<small>Mar–Aug 27</small></button>
+      </div>
+
+      <!-- Chart type: only shown in OoS view -->
+      <div class="btn-group" id="chart-type-row">
+        <span style="font-size:12px;font-weight:600;color:var(--ink-lt);display:flex;align-items:center;margin-right:4px">CHART TYPE:</span>
+        <button class="ctype-btn active" onclick="setChartType('bar',this)">&#9646;&#9646; Stacked Bar</button>
+        <button class="ctype-btn" onclick="setChartType('pie',this)">&#9711; Pie</button>
+      </div>
+
+      <div class="btn-group">
+        <button class="export-btn" onclick="exportPNG()">&#128202; Export PNG</button>
+        <button class="export-btn red" onclick="exportPDF()">&#128462; Export PDF</button>
+      </div>
+    </div>
+
+    <!-- ── OoS Chart View ── -->
+    <div id="view-chart">
+      <div class="chart-wrap">
+        <div class="chart-inner"><canvas id="pgChart"></canvas></div>
+      </div>
+      <div class="summary">
+        <div class="card coral"><h3>CALD Combined</h3><div class="val" id="caldVal">-</div><div class="sub">Culturally &amp; Linguistically Diverse<br>RAH + QEH Aggregated</div></div>
+        <div class="card blue"><h3>ATSI Combined</h3><div class="val" id="atsiVal">-</div><div class="sub">Aboriginal &amp; Torres Strait Islander<br>RAH + QEH Aggregated</div></div>
+        <div class="card purple"><h3>Vulnerable / Low SES</h3><div class="val" id="sesVal">-</div><div class="sub">Disability / Financial / DFV<br>RAH + QEH Aggregated</div></div>
+        <div class="card dark">
+          <h3 id="totalLabel">All Time Total</h3>
+          <div class="val" id="totalVal">-</div>
+          <div class="sub" id="totalSub">-</div>
+          <div class="ratio-row">
+            <div class="pill c" id="pr-cald">-</div>
+            <div class="pill a" id="pr-atsi">-</div>
+            <div class="pill s" id="pr-ses">-</div>
+          </div>
+        </div>
+      </div>
+      <p style="text-align:center;font-size:11px;color:var(--ink-lt);font-style:italic;margin-top:4px" id="chart-legend-note"></p>
+    </div>
+
+    <!-- ── People Reached Pictogram View ── -->
+    <div id="view-picto">
+
+      <div class="picto-cols">
+        <div class="picto-panel">
+          <div class="pp-label">For reference</div>
+          <div class="pp-mode">Occasions of Service</div>
+          <div class="pp-num" id="p-oos-num">-</div>
+          <div class="pp-num-sub">sessions with priority group patients</div>
+          <div class="pp-scale">
+            <svg width="12" height="17" viewBox="0 0 12 17"><circle cx="6" cy="4.5" r="3" fill="var(--ink-lt)"/><rect x="2" y="8" width="8" height="7.5" rx="2.5" fill="var(--ink-lt)" opacity="0.85"/></svg>
+            each figure = 10 sessions
+          </div>
+          <div class="pp-legend">
+            <div class="pp-legend-item"><span class="dot" style="background:var(--coral)"></span>CALD</div>
+            <div class="pp-legend-item"><span class="dot" style="background:var(--blue)"></span>ATSI</div>
+            <div class="pp-legend-item"><span class="dot" style="background:var(--purple)"></span>Vulnerable</div>
+          </div>
+          <div class="icon-field" id="oos-field"></div>
+        </div>
+
+        <div class="picto-panel">
+          <div class="pp-label">Proposed reporting</div>
+          <div class="pp-mode">Unique individuals reached</div>
+          <div class="pp-num" id="p-ind-num">-</div>
+          <div class="pp-num-sub">estimated priority group individuals seen</div>
+          <div class="pp-scale">
+            <svg width="12" height="17" viewBox="0 0 12 17"><circle cx="6" cy="4.5" r="3" fill="var(--ink-lt)"/><rect x="2" y="8" width="8" height="7.5" rx="2.5" fill="var(--ink-lt)" opacity="0.85"/></svg>
+            each figure = 10 individuals
+          </div>
+          <div class="pp-legend">
+            <div class="pp-legend-item"><span class="dot" style="background:var(--coral)"></span>CALD</div>
+            <div class="pp-legend-item"><span class="dot" style="background:var(--blue)"></span>ATSI</div>
+            <div class="pp-legend-item"><span class="dot" style="background:var(--purple)"></span>Vulnerable</div>
+          </div>
+          <div class="icon-field" id="ind-field"></div>
+        </div>
+      </div>
+
+      <div class="insight-bar">
+        <div class="ib-num" id="avg-ratio">-</div>
+        <div class="ib-text">
+          <strong>Average sessions per priority group individual</strong>
+          <span>Not single contacts — sustained therapeutic engagement across the reporting period</span>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="bd-title">Breakdown by priority group</div>
+        <table class="bd-table">
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>OoS</th>
+              <th>% of OoS</th>
+              <th>Individuals (est.)</th>
+              <th>Avg sessions</th>
+              <th>% reach</th>
+              <th>Reach</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="gl"><span class="dot" style="background:var(--coral)"></span>CALD</div></td>
+              <td><div class="tm" id="bd-cald-oos">-</div></td>
+              <td><div class="tm" id="bd-cald-pct">-</div></td>
+              <td><div class="tm" id="bd-cald-ind">-</div><div class="ts" id="bd-cald-ind-pct">-</div></td>
+              <td><div class="tm">2.3</div></td>
+              <td><div class="tm" id="bd-cald-reach-pct">-</div></td>
+              <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="bar-cald" style="background:var(--coral)"></div></div></div></td>
+            </tr>
+            <tr>
+              <td><div class="gl"><span class="dot" style="background:var(--blue)"></span>Aboriginal &amp; TSI</div></td>
+              <td><div class="tm" id="bd-atsi-oos">-</div></td>
+              <td><div class="tm" id="bd-atsi-pct">-</div></td>
+              <td><div class="tm" id="bd-atsi-ind">-</div><div class="ts" id="bd-atsi-ind-pct">-</div></td>
+              <td><div class="tm">2.2</div></td>
+              <td><div class="tm" id="bd-atsi-reach-pct">-</div></td>
+              <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="bar-atsi" style="background:var(--blue)"></div></div></div></td>
+            </tr>
+            <tr>
+              <td><div class="gl"><span class="dot" style="background:var(--purple)"></span>Vulnerable / Low SES</div></td>
+              <td><div class="tm" id="bd-ses-oos">-</div></td>
+              <td><div class="tm" id="bd-ses-pct">-</div></td>
+              <td><div class="tm" id="bd-ses-ind">-</div><div class="ts" id="bd-ses-ind-pct">-</div></td>
+              <td><div class="tm">2.9</div></td>
+              <td><div class="tm" id="bd-ses-reach-pct">-</div></td>
+              <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="bar-ses" style="background:var(--purple)"></div></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary cards for pictogram view -->
+      <div class="summary">
+        <div class="card coral"><h3>CALD Individuals</h3><div class="val" id="p-cald-val">-</div><div class="sub" id="p-cald-sub">-</div></div>
+        <div class="card blue"><h3>ATSI Individuals</h3><div class="val" id="p-atsi-val">-</div><div class="sub" id="p-atsi-sub">-</div></div>
+        <div class="card purple"><h3>Vulnerable Individuals</h3><div class="val" id="p-ses-val">-</div><div class="sub" id="p-ses-sub">-</div></div>
+        <div class="card dark">
+          <h3 id="p-total-label">Total Individuals</h3>
+          <div class="val" id="p-total-val">-</div>
+          <div class="sub" id="p-total-sub">-</div>
+          <div class="ratio-row">
+            <div class="pill c" id="p-pr-cald">-</div>
+            <div class="pill a" id="p-pr-atsi">-</div>
+            <div class="pill s" id="p-pr-ses">-</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-picto -->
+
+    <div class="footer-note" id="footer-note">
+      Music Therapy · RAH (Patsy Tan) + QEH (Jarran Zen) · Data via Google Sheets / Sunrise EMR.
+      <span id="footer-picto-note" style="display:none">
+        Individual estimates derived from OoS data using average session frequency per group (CALD 2.3, ATSI 2.2, Vulnerable 2.9). Systematic individual-level tracking not yet in place — proposed as a QI initiative for the next reporting period.
+      </span>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /capture-area -->
+
+<script>
+var SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQTtsFTBW5bK9RBxbWu0IUltxUspuQwjxZhyzx2SmHL-QQObGfHfZ5Sf5GGrHNh_C6NXACQ5LeOGBqd/pub?output=csv';
+
+var rawData = [];
+var chartObj = null;
+var currentPeriod = 'all';
+var currentChartType = 'bar';
+var currentView = 'oos';
+
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+var THRF = {
+  thrf1:{sy:2025,sm:8,ey:2026,em:1,label:'THRF 1 (Sep 25–Feb 26)'},
+  thrf2:{sy:2026,sm:2,ey:2026,em:7,label:'THRF 2 (Mar–Aug 26)'},
+  thrf3:{sy:2026,sm:8,ey:2027,em:1,label:'THRF 3 (Sep 26–Feb 27)'},
+  thrf4:{sy:2027,sm:2,ey:2027,em:7,label:'THRF 4 (Mar–Aug 27)'},
+};
+
+var C = {
+  cald:  {border:'#e8865f', bg:'rgba(244,165,138,0.65)', hex:'#E67E73'},
+  atsi:  {border:'#4da8a8', bg:'rgba(127,196,196,0.65)', hex:'#4A9BC7'},
+  ses:   {border:'#9B6B9E', bg:'rgba(184,169,232,0.65)', hex:'#9B6B9E'},
+};
+
+// Individual conversion ratios (OoS / avg_sessions = individuals)
+var AVG = { cald: 2.3, atsi: 2.2, ses: 2.9 };
+
+function personSVG(colour) {
+  return '<svg width="15" height="21" viewBox="0 0 15 21" xmlns="http://www.w3.org/2000/svg">'
+    + '<circle cx="7.5" cy="5" r="3.8" fill="' + colour + '"/>'
+    + '<rect x="2.5" y="9" width="10" height="10" rx="3" fill="' + colour + '" opacity="0.9"/>'
+    + '</svg>';
+}
+
+function fillIcons(id, groups, scale) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var html = '';
+  groups.forEach(function(g) {
+    var n = Math.max(1, Math.round(g[0] / scale));
+    for (var i = 0; i < n; i++) {
+      html += '<span style="display:inline-block;line-height:0">' + personSVG(g[1]) + '</span>';
+    }
+  });
+  el.innerHTML = html;
+}
+
+function pct(v, total) {
+  return total > 0 ? Math.round((v/total)*100) + '%' : '0%';
+}
+
+// ── Fetch ──
+function fetchData() {
+  fetch(SHEETS_URL)
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(function(csv) {
+      parseCSV(csv);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      render();
+    })
+    .catch(function(err) {
+      document.getElementById('loading').innerHTML =
+        '<span style="color:#c0392b">⚠ Error loading data.</span><br><span style="font-size:13px;color:#555">'
+        + err.message + '</span>';
+    });
+}
+
+function parseCSV(csv) {
+  if (csv.indexOf('<html') !== -1) throw new Error('Received HTML — check Sheet is published.');
+  var lines = csv.split('\n');
+  rawData = [];
+  for (var i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    var cols = lines[i].split(',');
+    var mo = (cols[0]||'').trim(), yr = (cols[1]||'').trim();
+    var c2=+(cols[2]||0), c3=+(cols[3]||0), c4=+(cols[4]||0),
+        c5=+(cols[5]||0), c6=+(cols[6]||0), c7=+(cols[7]||0);
+    if (!mo || !yr) continue;
+    var mLow = mo.toLowerCase().substring(0,3);
+    var mi = MONTHS.findIndex(function(m){ return m.toLowerCase()===mLow; });
+    rawData.push({
+      month: mo, year: parseInt(yr,10), mi: mi,
+      cald: c2+c3, atsi: c4+c5, ses: c6+c7
+    });
+  }
+}
+
+function getFiltered(period) {
+  if (period === 'all') return rawData;
+  if (THRF[period]) {
+    var r = THRF[period];
+    return rawData.filter(function(d){
+      if (d.year < r.sy || d.year > r.ey) return false;
+      if (d.year===r.sy && d.mi<r.sm) return false;
+      if (d.year===r.ey && d.mi>r.em) return false;
+      return true;
+    });
+  }
+  return rawData.filter(function(d){ return d.year===parseInt(period,10); });
+}
+
+// ── Main render dispatcher ──
+function render() {
+  var fd = getFiltered(currentPeriod);
+  var caldT = fd.reduce(function(a,b){return a+b.cald;},0);
+  var atsiT = fd.reduce(function(a,b){return a+b.atsi;},0);
+  var sesT  = fd.reduce(function(a,b){return a+b.ses; },0);
+  var oosT  = caldT + atsiT + sesT;
+
+  var caldI = Math.round(caldT / AVG.cald);
+  var atsiI = Math.round(atsiT / AVG.atsi);
+  var sesI  = Math.round(sesT  / AVG.ses);
+  var indT  = caldI + atsiI + sesI;
+  var avgRat= oosT > 0 ? (oosT/indT).toFixed(1) : '-';
+
+  var periodLabel = THRF[currentPeriod] ? THRF[currentPeriod].label
+                  : currentPeriod==='all' ? 'All Time Total' : currentPeriod+' Total';
+
+  if (currentView === 'oos') {
+    renderChart(fd, caldT, atsiT, sesT, oosT, periodLabel);
+  } else {
+    renderPicto(caldT, atsiT, sesT, oosT, caldI, atsiI, sesI, indT, avgRat, periodLabel, fd.length);
+  }
+}
+
+// ── OoS Chart ──
+function renderChart(fd, caldT, atsiT, sesT, oosT, label) {
+  document.getElementById('caldVal').textContent  = caldT.toLocaleString();
+  document.getElementById('atsiVal').textContent  = atsiT.toLocaleString();
+  document.getElementById('sesVal').textContent   = sesT.toLocaleString();
+  document.getElementById('totalVal').textContent = oosT.toLocaleString();
+  document.getElementById('totalLabel').textContent = label;
+  document.getElementById('totalSub').textContent = fd.length + ' months of data';
+  document.getElementById('pr-cald').textContent  = pct(caldT,oosT) + ' CALD';
+  document.getElementById('pr-atsi').textContent  = pct(atsiT,oosT) + ' ATSI';
+  document.getElementById('pr-ses').textContent   = pct(sesT,oosT)  + ' SES';
+
+  var labels = fd.map(function(d){ return d.month+' '+d.year; });
+  var note = 'Music Therapy — Priority Groups ('
+    + (labels.length ? labels[0]+' to '+labels[labels.length-1] : 'No data') + ')';
+  document.getElementById('chart-legend-note').textContent = note;
+
+  var ctx = document.getElementById('pgChart').getContext('2d');
+  if (chartObj) chartObj.destroy();
+
+  if (currentChartType === 'pie') {
+    chartObj = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['CALD','Aboriginal & Torres Strait Islander','Vulnerable / Low SES'],
+        datasets:[{
+          data:[caldT,atsiT,sesT],
+          backgroundColor:[C.cald.bg,C.atsi.bg,C.ses.bg],
+          borderColor:[C.cald.border,C.atsi.border,C.ses.border],
+          borderWidth:3, hoverOffset:10
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'58%',
+        plugins:{
+          legend:{position:'bottom',labels:{usePointStyle:true,padding:20}},
+          tooltip:{callbacks:{label:function(c){
+            var p = oosT>0?((c.raw/oosT)*100).toFixed(1):0;
+            return ' '+c.raw.toLocaleString()+' sessions ('+p+'%)';
+          }}}
+        }
+      }
+    });
+  } else {
+    chartObj = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels:labels,
+        datasets:[
+          {label:'CALD',   data:fd.map(function(d){return d.cald;}), backgroundColor:C.cald.bg, borderColor:C.cald.border, borderWidth:1.5},
+          {label:'ATSI',   data:fd.map(function(d){return d.atsi;}), backgroundColor:C.atsi.bg, borderColor:C.atsi.border, borderWidth:1.5},
+          {label:'Low SES',data:fd.map(function(d){return d.ses;}),  backgroundColor:C.ses.bg,  borderColor:C.ses.border,  borderWidth:1.5}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{usePointStyle:true}}},
+        scales:{
+          x:{stacked:true},
+          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Sessions'}}
+        },
+        interaction:{mode:'index',intersect:false}
+      }
+    });
+  }
+}
+
+// ── Pictogram ──
+function renderPicto(caldT, atsiT, sesT, oosT, caldI, atsiI, sesI, indT, avgRat, label, months) {
+  document.getElementById('p-oos-num').textContent = oosT.toLocaleString();
+  document.getElementById('p-ind-num').textContent = '~' + indT.toLocaleString();
+  document.getElementById('avg-ratio').textContent = avgRat + '×';
+  document.getElementById('p-total-label').textContent = label;
+  document.getElementById('p-total-val').textContent = '~' + indT.toLocaleString();
+  document.getElementById('p-total-sub').textContent = months + ' months of data';
+
+  document.getElementById('p-cald-val').textContent = '~' + caldI;
+  document.getElementById('p-atsi-val').textContent = '~' + atsiI;
+  document.getElementById('p-ses-val').textContent  = '~' + sesI;
+  document.getElementById('p-cald-sub').textContent = pct(caldI,indT) + ' of total individuals';
+  document.getElementById('p-atsi-sub').textContent = pct(atsiI,indT) + ' of total individuals';
+  document.getElementById('p-ses-sub').textContent  = pct(sesI, indT) + ' of total individuals';
+
+  document.getElementById('p-pr-cald').textContent = pct(caldI,indT) + ' CALD';
+  document.getElementById('p-pr-atsi').textContent = pct(atsiI,indT) + ' ATSI';
+  document.getElementById('p-pr-ses').textContent  = pct(sesI, indT) + ' Vuln.';
+
+  // breakdown table
+  document.getElementById('bd-cald-oos').textContent  = caldT.toLocaleString();
+  document.getElementById('bd-atsi-oos').textContent  = atsiT.toLocaleString();
+  document.getElementById('bd-ses-oos').textContent   = sesT.toLocaleString();
+  document.getElementById('bd-cald-pct').textContent  = pct(caldT,oosT);
+  document.getElementById('bd-atsi-pct').textContent  = pct(atsiT,oosT);
+  document.getElementById('bd-ses-pct').textContent   = pct(sesT,oosT);
+  document.getElementById('bd-cald-ind').textContent  = '~'+caldI;
+  document.getElementById('bd-atsi-ind').textContent  = '~'+atsiI;
+  document.getElementById('bd-ses-ind').textContent   = '~'+sesI;
+  document.getElementById('bd-cald-ind-pct').textContent = pct(caldI,indT)+' of reach';
+  document.getElementById('bd-atsi-ind-pct').textContent = pct(atsiI,indT)+' of reach';
+  document.getElementById('bd-ses-ind-pct').textContent  = pct(sesI, indT)+' of reach';
+  document.getElementById('bd-cald-reach-pct').textContent = pct(caldI,indT);
+  document.getElementById('bd-atsi-reach-pct').textContent = pct(atsiI,indT);
+  document.getElementById('bd-ses-reach-pct').textContent  = pct(sesI, indT);
+  document.getElementById('bar-cald').style.width = pct(caldI,indT);
+  document.getElementById('bar-atsi').style.width = pct(atsiI,indT);
+  document.getElementById('bar-ses').style.width  = pct(sesI, indT);
+
+  // pictogram icon fields
+  fillIcons('oos-field', [[caldT,C.cald.hex],[atsiT,C.atsi.hex],[sesT,C.ses.hex]], 10);
+  fillIcons('ind-field', [[caldI,C.cald.hex],[atsiI,C.atsi.hex],[sesI,C.ses.hex]], 10);
+}
+
+// ── View toggle ──
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-chart').style.display = v==='oos' ? 'block' : 'none';
+  document.getElementById('view-picto').style.display = v==='reach' ? 'block' : 'none';
+  document.getElementById('chart-type-row').style.display = v==='oos' ? 'flex' : 'none';
+  document.getElementById('btn-oos').classList.toggle('active',   v==='oos');
+  document.getElementById('btn-reach').classList.toggle('active', v==='reach');
+  document.getElementById('mockup-tag').classList.toggle('visible', v==='reach');
+  document.getElementById('footer-picto-note').style.display = v==='reach' ? 'inline' : 'none';
+  render();
+}
+
+// ── Period / chart type ──
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.time-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  render();
+}
+
+function setChartType(t, btn) {
+  currentChartType = t;
+  document.querySelectorAll('.ctype-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  render();
+}
+
+// ── Export ──
+function exportPNG() {
+  html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
+    var a=document.createElement('a');
+    a.download='MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.png';
+    a.href=c.toDataURL(); a.click();
+  });
+}
+function exportPDF() {
+  html2canvas(document.getElementById('capture-area'),{scale:2}).then(function(c){
+    var jsPDF=window.jspdf.jsPDF;
+    var img=c.toDataURL('image/png'),w=c.width/2,h=c.height/2;
+    var pdf=new jsPDF({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
+    pdf.addImage(img,'PNG',0,0,w,h);
+    pdf.save('MT_Priority_Groups_'+currentPeriod+'_'+(currentView==='reach'?'reach':'oos')+'.pdf');
+  });
+}
+
+fetchData();
+</script>
+</body>
+</html>
