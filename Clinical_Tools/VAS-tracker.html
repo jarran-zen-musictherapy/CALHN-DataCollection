@@ -1,15 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Music Therapy — Mood</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #FAFAF8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  #app { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 24px; }
-  textarea:focus { border-color: #94A3B8 !important; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Music Therapy — Mood</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="MT Mood">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+      * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+        -webkit-tap-highlight-color: transparent; 
+        /* Prevents accidental text selection, making it feel like a native app */
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      body { 
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        background: #FAFAF8; 
+        min-height: 100vh; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        /* Prevents the "bounce" effect when scrolling on iOS */
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #app { 
+        width: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 24px; 
+      }
+
+      textarea {
+        -webkit-user-select: text; /* Allow typing in the notes box */
+        user-select: text;
+      }
+
+      textarea:focus { border-color: #94A3B8 !important; }
+
+      /* Subtle entry animation for the whole app */
+      #app {
+        animation: fadeIn 0.6s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
 </head>
 <body>
 <div id="app"></div>
@@ -106,7 +155,6 @@ function App() {
   const [showDone, setShowDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Your updated Google Apps Script URL
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7cXBhkfvj0mF5NF2ruDpPJRND4fSru-RU3FSsp1rozHg3MOcCO/exec';
 
   useEffect(() => {
@@ -185,7 +233,6 @@ function App() {
     e(FaceRow, { label: 'Before Session', faces: FACES, value: pre, onTap: v => setPre(v), visible: true }),
     e(FaceRow, { label: 'After Session', faces: FACES, value: post, onTap: v => setPost(v), visible: showPost }),
     
-    // Notes and Done button section
     e('div', {
       style: {
         width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px', marginTop: 16,
