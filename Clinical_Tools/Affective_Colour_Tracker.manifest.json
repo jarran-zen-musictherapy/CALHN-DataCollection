@@ -1,0 +1,20 @@
+{
+  "name": "Affective Colour Tracker",
+  "short_name": "Colour Track",
+  "start_url": "/CALHN-DataCollection/Clinical_Tools/Affective_Colour_Tracker.html",
+  "display": "standalone",
+  "background_color": "#F6F8FA",
+  "theme_color": "#F6F8FA",
+  "icons": [
+    {
+      "src": "/CALHN-DataCollection/Clinical_Tools/colour-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/CALHN-DataCollection/Clinical_Tools/colour-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
