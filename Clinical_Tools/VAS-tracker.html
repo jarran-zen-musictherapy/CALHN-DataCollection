@@ -60,14 +60,45 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
+      .sync-indicator {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.05);
+        color: #1E293B;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+      }
+      .sync-indicator.pending {
+        background: #FEF08A;
+        color: #854D0E;
+      }
+      .sync-indicator.offline {
+        background: #FECACA;
+        color: #991B1B;
+      }
     </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="syncIndicator" class="sync-indicator">🟢 All Synced</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
+const STORAGE_KEY = 'vas_mood_logs';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7cXBhkfvj0mF5NF2ruDpPJRND4fSru-RU3FSsp1rozHg3MOcCO/exec';
+
 const e = React.createElement;
 const { useState, useEffect } = React;
 
@@ -157,8 +188,6 @@ function App() {
   const [showDone, setShowDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7cXBhkfvj0mF5NF2ruDpPJRND4fSru-RU3FSsp1rozHg3MOcCO/exec';
-
   useEffect(() => {
     if (pre !== null && !showPost) {
       const t = setTimeout(() => setShowPost(true), 300);
@@ -178,7 +207,7 @@ function App() {
     setSubmitted(false); setShowPost(false); setShowDone(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setIsSubmitting(true);
     const timestamp = new Date().toLocaleString('en-AU', {
       timeZone: 'Australia/Adelaide',
@@ -186,19 +215,21 @@ function App() {
       hour: '2-digit', minute: '2-digit', second: '2-digit',
       hour12: false
     });
-    try {
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ pre: pre, post: post, notes: notes, timestamp: timestamp }),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Error submitting data:', error);
-      alert('There was an issue saving your response. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    const record = {
+      id: Date.now().toString(),
+      timestamp: timestamp,
+      pre: pre,
+      post: post,
+      notes: notes,
+      syncStatus: "pending"
+    };
+    let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    records.push(record);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    updateSyncUI();
+    setSubmitted(true);
+    setIsSubmitting(false);
+    attemptSync();
   };
 
   if (submitted) {
@@ -271,6 +302,65 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('app')).render(e(App));
+
+async function attemptSync() {
+  if (!navigator.onLine) {
+    updateSyncUI();
+    return;
+  }
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pending = records.filter(r => r.syncStatus === "pending");
+  if (pending.length === 0) return;
+
+  for (let record of pending) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      });
+      let idx = records.findIndex(r => r.id === record.id);
+      if (idx !== -1) {
+        records[idx].syncStatus = "synced";
+        updateSyncUI();
+      }
+    } catch (err) {
+      console.warn('[Sync] Failed, will retry:', err);
+      break;
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
+}
+
+function updateSyncUI() {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const pendingCount = records.filter(r => r.syncStatus === "pending").length;
+
+  if (!navigator.onLine) {
+    indicator.textContent = `🔴 Offline - ${pendingCount} Pending`;
+    indicator.className = 'sync-indicator offline';
+  } else if (pendingCount > 0) {
+    indicator.textContent = `🟠 ${pendingCount} Pending Sync...`;
+    indicator.className = 'sync-indicator pending';
+  } else {
+    indicator.textContent = `🟢 All Synced`;
+    indicator.className = 'sync-indicator';
+  }
+}
+
+window.addEventListener('online', () => { attemptSync(); updateSyncUI(); });
+window.addEventListener('offline', updateSyncUI);
+
+setInterval(attemptSync, 120000);
+
+window.addEventListener('load', () => { attemptSync(); updateSyncUI(); });
 </script>
 <script>
   if ('serviceWorker' in navigator) {
