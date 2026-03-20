@@ -10,8 +10,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0E0F13">
 
-<link rel="manifest" href="/CALHN-DataCollection/colour-tracker.manifest.json" />
-<link rel="apple-touch-icon" href="/CALHN-DataCollection/colour-icon-192.png" />
+<link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/Affective_Colour_Tracker.manifest.json" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/colour-icon-192.png" />
 
 <title>Affective Colour Tracker</title>
 <style>
@@ -372,6 +372,15 @@ function exportCSV() {
   a.download = `Affective_Colour_Log_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

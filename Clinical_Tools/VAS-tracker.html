@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/VAS-tracker.manifest.json">
+    <link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/vas-icon-192.png">
     <title>Music Therapy — Mood</title>
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="MT Mood">
@@ -269,6 +271,15 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('app')).render(e(App));
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

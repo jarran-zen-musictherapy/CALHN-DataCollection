@@ -11,7 +11,7 @@
 
 <meta name="theme-color" content="#0d1117" />
 <link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/i-had-a-session.manifest.json" />
-<link rel="apple-touch-icon" href="/CALHN-DataCollection/icon-192.png" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/icon-192.png" />
 <title>Clinician Observed Mood Change — CALHN MT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
@@ -373,6 +373,15 @@ function renderLog() {
 }
 
 init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>
