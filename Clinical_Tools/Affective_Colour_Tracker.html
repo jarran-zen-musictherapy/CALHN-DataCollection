@@ -10,8 +10,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0E0F13">
 
-<link rel="manifest" href="/CALHN-DataCollection/colour-tracker.manifest.json" />
-<link rel="apple-touch-icon" href="/CALHN-DataCollection/colour-icon-192.png" />
+<link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/Affective_Colour_Tracker.manifest.json" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/colour-icon-192.png" />
 
 <title>Affective Colour Tracker</title>
 <style>
@@ -114,6 +114,28 @@
   .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
   .summary-card { background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); }
   .shift-box { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; font-size: 0.85rem; text-align: center; line-height: 1.6; }
+  .sync-indicator {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.05);
+    color: #1E293B;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .sync-indicator.pending {
+    background: #FEF08A;
+    color: #854D0E;
+  }
+  .sync-indicator.offline {
+    background: #FECACA;
+    color: #991B1B;
+  }
 </style>
 </head>
 <body>
@@ -152,6 +174,7 @@
   
   <div style="display:flex; flex-direction:column; gap:1rem; width:100%; align-items:center; margin-top: auto; padding-bottom: 2rem;">
     <button class="primary" id="saveBtn" style="width:100%;" onclick="saveRecord()">Save to Log</button>
+    <div id="syncIndicator" class="sync-indicator">🟢 All Synced</div>
     <button style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em; padding:1rem;" onclick="exportCSV()">Download CSV History</button>
   </div>
 </div>
@@ -326,9 +349,11 @@ function showSummary() {
 }
 
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwG32LVM1yUOuojKADKUNN80YbVN0RJo6AS1yBLu26cbatyMsEW7DkbaN_c-7FV9Sqc/exec";
+const STORAGE_KEY = 'affective_colour_logs';
 
 function saveRecord() {
   const record = {
+    id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     preScore: captured.pre.intensity,
     postScore: captured.post.intensity,
@@ -338,29 +363,83 @@ function saveRecord() {
     preEmotion: captured.pre.label,
     postEmotion: captured.post.label,
     preNote: captured.pre.note || "",
-    postNote: captured.post.note || ""
+    postNote: captured.post.note || "",
+    syncStatus: "pending"
   };
 
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   records.push(record);
-  localStorage.setItem('affective_colour_logs', JSON.stringify(records));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
 
   const btn = document.getElementById('saveBtn');
-  btn.textContent = "Syncing...";
-  btn.disabled = true;
+  if (btn) {
+    btn.textContent = "✓ Saved";
+    btn.disabled = true;
+  }
 
-  fetch(WEBHOOK_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(record)
-  }).then(() => {
-    alert('Session Logged & Synced to Sheet.');
-    location.reload();
-  }).catch(err => {
-    alert('Saved locally, but sync failed. Check connection.');
-    location.reload();
-  });
+  attemptSync();
+  setTimeout(() => { location.reload(); }, 1500);
 }
+
+async function attemptSync() {
+  if (!navigator.onLine) {
+    updateSyncUI();
+    return;
+  }
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pending = records.filter(r => r.syncStatus === "pending");
+  if (pending.length === 0) return;
+
+  for (let record of pending) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      });
+      let idx = records.findIndex(r => r.id === record.id);
+      if (idx !== -1) {
+        records[idx].syncStatus = "synced";
+        updateSyncUI();
+      }
+    } catch (err) {
+      console.warn('[Sync] Failed, will retry:', err);
+      break;
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
+}
+
+function updateSyncUI() {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const pendingCount = records.filter(r => r.syncStatus === "pending").length;
+
+  if (!navigator.onLine) {
+    indicator.textContent = `🔴 Offline - ${pendingCount} Pending`;
+    indicator.className = 'sync-indicator offline';
+  } else if (pendingCount > 0) {
+    indicator.textContent = `🟠 ${pendingCount} Pending Sync...`;
+    indicator.className = 'sync-indicator pending';
+  } else {
+    indicator.textContent = `🟢 All Synced`;
+    indicator.className = 'sync-indicator';
+  }
+}
+
+window.addEventListener('online', () => { attemptSync(); updateSyncUI(); });
+window.addEventListener('offline', updateSyncUI);
+
+setInterval(attemptSync, 120000);
+
+window.addEventListener('load', () => { attemptSync(); updateSyncUI(); });
 
 function exportCSV() {
   if(!records.length) return alert("No logs found to export.");
@@ -372,6 +451,15 @@ function exportCSV() {
   a.download = `Affective_Colour_Log_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>
