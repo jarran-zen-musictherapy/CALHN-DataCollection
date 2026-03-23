@@ -11,7 +11,7 @@
 
 <meta name="theme-color" content="#0d1117" />
 <link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/i-had-a-session.manifest.json" />
-<link rel="apple-touch-icon" href="/CALHN-DataCollection/icon-192.png" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/icon-192.png" />
 <title>Clinician Observed Mood Change — CALHN MT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
@@ -139,6 +139,28 @@
   .session-meta { flex: 1; }
   .session-date { font-size: 12px; color: var(--muted); }
   .session-delta { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+  .sync-indicator {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .sync-indicator.pending {
+    background: #FEF08A;
+    color: #854D0E;
+  }
+  .sync-indicator.offline {
+    background: #FECACA;
+    color: #991B1B;
+  }
 </style>
 </head>
 <body>
@@ -202,6 +224,7 @@
       </div>
 
       <button id="save-btn" onclick="saveSession()" disabled>Log this session</button>
+      <div id="syncIndicator" class="sync-indicator">🟢 All Synced</div>
       <div id="sync-status" style="font-size:12px; margin-top:10px; text-align:center; min-height:18px;"></div>
 
       <div id="scale-ref">
@@ -224,8 +247,8 @@
 
 <script>
 // ALL YOUR JAVASCRIPT LOGIC RETAINED & CLEANED
-const STORAGE_KEY = "calhn_mood_sessions";
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzKGePGvXLXnzIxw2m5X23-zdmwNs5mUgBOpRaeSej-zIfVO9v46ovg6jg722y4_D0J/exec";
+const STORAGE_KEY = 'mood_session_logs';
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzKGePGvXLXnzIxw2m5X23-zdmwNs5mUgBOpRaeSej-zIfVO9v46ovg6jg722y4_D0J/exec";
 
 const ANCHORS = { 1:"Severely distressed", 2:"Markedly distressed", 3:"Distressed", 4:"Mildly distressed", 5:"Neutral / flat", 6:"Settled", 7:"Engaged", 8:"Positive", 9:"Noticeably elevated", 10:"Bright / animated" };
 
@@ -250,6 +273,8 @@ function init() {
 
 function loadSessions() {
   try { state.sessions = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { state.sessions = []; }
+  // Ensure date field exists for renderLog compatibility
+  state.sessions = state.sessions.map(s => ({ ...s, date: s.date || s.timestamp }));
 }
 
 function updateTabCount() {
@@ -298,34 +323,93 @@ function updateSaveBtn() {
   btn.classList.toggle("ready", !btn.disabled);
 }
 
-async function saveSession() {
+function saveSession() {
   const note = document.getElementById("note-input").value;
   const date = state.mode === "retro" ? new Date(document.getElementById("retro-date").value).toISOString() : new Date().toISOString();
-  const session = { pre: state.pre, post: state.post, note, date, mode: state.mode };
-  
-  state.sessions.push(session);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
-  
+  const record = {
+    id: Date.now().toString(),
+    timestamp: date,
+    date: date,
+    pre: state.pre,
+    post: state.post,
+    note,
+    mode: state.mode,
+    scoreChange: state.post - state.pre,
+    syncStatus: "pending"
+  };
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  records.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  state.sessions = records;
+  updateSyncUI();
+
   const btn = document.getElementById("save-btn");
   btn.textContent = "✓ Saved";
   btn.classList.replace("ready", "saved");
-  
-  await syncToSheets(session);
-  setTimeout(() => { location.reload(); }, 1000);
+
+  attemptSync();
+  setTimeout(() => { location.reload(); }, 1500);
 }
 
-async function syncToSheets(data) {
-  const status = document.getElementById("sync-status");
-  status.textContent = "Syncing...";
-  try {
-    await fetch(SHEETS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-    status.textContent = "✓ Synced to Cloud";
-    status.style.color = "var(--green)";
-  } catch {
-    status.textContent = "⚠ Offline: Saved Locally";
-    status.style.color = "var(--yellow)";
+async function attemptSync() {
+  if (!navigator.onLine) {
+    updateSyncUI();
+    return;
+  }
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pending = records.filter(r => r.syncStatus === "pending");
+  if (pending.length === 0) return;
+
+  for (let record of pending) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      });
+      let idx = records.findIndex(r => r.id === record.id);
+      if (idx !== -1) {
+        records[idx].syncStatus = "synced";
+        updateSyncUI();
+      }
+    } catch (err) {
+      console.warn('[Sync] Failed, will retry:', err);
+      break;
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
+}
+
+function updateSyncUI() {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const pendingCount = records.filter(r => r.syncStatus === "pending").length;
+
+  if (!navigator.onLine) {
+    indicator.textContent = `🔴 Offline - ${pendingCount} Pending`;
+    indicator.className = 'sync-indicator offline';
+  } else if (pendingCount > 0) {
+    indicator.textContent = `🟠 ${pendingCount} Pending Sync...`;
+    indicator.className = 'sync-indicator pending';
+  } else {
+    indicator.textContent = `🟢 All Synced`;
+    indicator.className = 'sync-indicator';
   }
 }
+
+window.addEventListener('online', () => { attemptSync(); updateSyncUI(); });
+window.addEventListener('offline', updateSyncUI);
+
+setInterval(attemptSync, 120000);
+
+window.addEventListener('load', () => { attemptSync(); updateSyncUI(); });
 
 function switchTab(tab) {
   document.getElementById("view-entry").classList.toggle("active", tab === "entry");
@@ -373,6 +457,15 @@ function renderLog() {
 }
 
 init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

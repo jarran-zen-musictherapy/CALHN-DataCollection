@@ -1,0 +1,20 @@
+{
+  "name": "VAS Mood Check",
+  "short_name": "VAS Mood",
+  "start_url": "/CALHN-DataCollection/Clinical_Tools/VAS-tracker.html",
+  "display": "standalone",
+  "background_color": "#FAFAF8",
+  "theme_color": "#FAFAF8",
+  "icons": [
+    {
+      "src": "/CALHN-DataCollection/Clinical_Tools/vas-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/CALHN-DataCollection/Clinical_Tools/vas-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
