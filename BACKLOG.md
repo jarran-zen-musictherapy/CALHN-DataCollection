@@ -10,8 +10,6 @@ Live app: https://jarran-zen-musictherapy.github.io/CALHN-DataCollection/
 |---|------|------|----------|
 | [#27](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/27) | Global | **Bug:** Data will not load if any button selected before data has loaded | High |
 | [#26](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/26) | MTOoS.html | Export & Date range — align on mobile view | Medium |
-| [#25](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/25) | index.html | Add VAS Tracker Data Visualiser | Medium |
-| [#20](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/20) | index.html | MT/AT — add descriptions | Low |
 
 ---
 
@@ -27,6 +25,8 @@ Live app: https://jarran-zen-musictherapy.github.io/CALHN-DataCollection/
 
 | # | Task | Completed |
 |---|------|-----------|
+| [#25](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/25) | Index.html — Add VAS Tracker Data Visualiser | 2026-03-25 |
+| [#20](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/20) | Index.html — MT/AT descriptions | 2026-03-25 |
 | [#24](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/24) | Index.html — Add Affect Wheel Data Visualiser | 2026-03-10 |
 | [#17](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/17) | Priority-groups.html — Expand CALD subtitle | 2026-03-10 |
 | [#19](https://github.com/jarran-zen-musictherapy/CALHN-DataCollection/issues/19) | Music Therapy OoS — description, reporting periods, PNG/PDF export | 2026-03-10 |

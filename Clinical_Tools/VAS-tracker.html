@@ -102,11 +102,13 @@ const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7c
 const e = React.createElement;
 const { useState, useEffect } = React;
 
-const FACE_COUNT = 7;
+const FACE_COUNT = 5;
+const FACE_LABELS = ['Very Low', 'Low', 'Neutral', 'High', 'Very High'];
 const FACES = Array.from({ length: FACE_COUNT }, (_, i) => {
   const t = i / (FACE_COUNT - 1);
   return {
     score: i + 1,
+    label: FACE_LABELS[i],
     color: `hsl(${t * 140}, ${65 + t * 10}%, ${42 + t * 8}%)`,
     bg: `hsl(${t * 140}, ${65 + t * 10}%, 95%)`,
     t,
@@ -143,34 +145,45 @@ function Smiley({ face, size, selected, muted, onTap }) {
     onClick: () => onTap(face.score),
     style: {
       background: 'none', border: 'none', cursor: 'pointer', padding: 0, outline: 'none',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
       transition: 'transform 0.15s ease, opacity 0.15s ease',
-      transform: selected ? 'scale(1.2)' : 'scale(1)',
-      opacity: muted ? 0.3 : 1,
+      transform: selected ? 'scale(1.12)' : 'scale(1)',
+      opacity: muted ? 0.25 : 1,
     },
-    'aria-label': 'Score ' + face.score,
+    'aria-label': `Score ${face.score} — ${face.label}`,
   },
     e('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}` },
-      e('circle', { cx, cy, r, fill: selected ? face.color : face.bg, stroke: face.color, strokeWidth: selected ? 3.5 : 2 }),
+      e('circle', { cx, cy, r, fill: selected ? face.color : face.bg, stroke: face.color, strokeWidth: selected ? 4.5 : 2.5 }),
       ...eyes,
-      e('path', { d: `M ${cx-mw} ${my} Q ${cx} ${my+curve}, ${cx+mw} ${my}`, stroke: sc, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' }),
-    )
+      e('path', { d: `M ${cx-mw} ${my} Q ${cx} ${my+curve}, ${cx+mw} ${my}`, stroke: sc, strokeWidth: 3, fill: 'none', strokeLinecap: 'round' }),
+    ),
+    e('span', {
+      style: {
+        fontSize: Math.max(10, size * 0.13),
+        fontWeight: 700,
+        color: selected ? face.color : '#475569',
+        letterSpacing: '0.01em',
+        lineHeight: 1,
+        transition: 'color 0.15s ease',
+      }
+    }, face.label)
   );
 }
 
-function FaceRow({ label, faces, value, onTap, visible }) {
+function FaceRow({ label, faces, value, onTap, visible, size }) {
   return e('div', {
     style: {
-      textAlign: 'center', marginBottom: 16,
+      textAlign: 'center', marginBottom: 20,
       transition: 'all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(24px)',
       pointerEvents: visible ? 'auto' : 'none',
     }
   },
-    e('div', { style: { fontSize: 13, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 } }, label),
-    e('div', { style: { display: 'flex', justifyContent: 'center', gap: 8 } },
+    e('div', { style: { fontSize: 15, fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 } }, label),
+    e('div', { style: { display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'flex-start' } },
       faces.map(f => e(Smiley, {
-        key: f.score, face: f, size: 80,
+        key: f.score, face: f, size: size || 100,
         selected: value === f.score,
         muted: value !== null && value !== f.score,
         onTap,
@@ -180,6 +193,9 @@ function FaceRow({ label, faces, value, onTap, visible }) {
 }
 
 function App() {
+  // Responsive face size: fills available width on any device, capped at 130px
+  const faceSize = Math.min(130, Math.floor((window.innerWidth - 96 - 4 * 8) / 5));
+
   const [pre, setPre] = useState(null);
   const [post, setPost] = useState(null);
   const [notes, setNotes] = useState('');
@@ -241,12 +257,12 @@ function App() {
         e('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, marginBottom: 24 } },
           e('div', null,
             e('div', { style: { fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 } }, 'Before'),
-            e(Smiley, { face: FACES[pre - 1], size: 60, selected: true, onTap: () => {} }),
+            e(Smiley, { face: FACES[pre - 1], size: 80, selected: true, onTap: () => {} }),
           ),
           e('div', { style: { fontSize: 26, color: '#CBD5E1' } }, '→'),
           e('div', null,
             e('div', { style: { fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 } }, 'After'),
-            e(Smiley, { face: FACES[post - 1], size: 60, selected: true, onTap: () => {} }),
+            e(Smiley, { face: FACES[post - 1], size: 80, selected: true, onTap: () => {} }),
           ),
           e('div', { style: { padding: '8px 18px', borderRadius: 12, background: diff > 0 ? '#ECFDF5' : diff < 0 ? '#FEF2F2' : '#F8FAFC' } },
             e('div', { style: { fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 } }, 'Change'),
@@ -263,8 +279,8 @@ function App() {
       e('div', { style: { fontSize: 12, color: '#94A3B8', letterSpacing: '0.06em', marginBottom: 4 } }, 'CALHN MUSIC THERAPY'),
       e('h1', { style: { fontSize: 28, fontWeight: 600, color: '#1E293B', letterSpacing: '-0.02em' } }, 'How are you feeling?'),
     ),
-    e(FaceRow, { label: 'Before Session', faces: FACES, value: pre, onTap: v => setPre(v), visible: true }),
-    e(FaceRow, { label: 'After Session', faces: FACES, value: post, onTap: v => setPost(v), visible: showPost }),
+    e(FaceRow, { label: 'Before Session', faces: FACES, value: pre, onTap: v => setPre(v), visible: true, size: faceSize }),
+    e(FaceRow, { label: 'After Session', faces: FACES, value: post, onTap: v => setPost(v), visible: showPost, size: faceSize }),
     
     e('div', {
       style: {
