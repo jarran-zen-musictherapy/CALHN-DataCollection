@@ -386,18 +386,20 @@
 
     function parseDate(str) {
         if (!str) return null;
-        let d = new Date(str);
-        if (!isNaN(d)) return d;
         
-        // Fallback for dd/mm/yyyy Australian format
+        // 1. Force the Australian dd/mm/yyyy check FIRST
         const parts = str.split(' ');
         const datePart = parts[0];
         const m = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (m) {
-            d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T00:00:00`);
-            return isNaN(d) ? null : d;
+            // Reconstruct as YYYY-MM-DD for reliable parsing
+            let d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T00:00:00`);
+            if (!isNaN(d)) return d;
         }
-        return null;
+        
+        // 2. Fallback to native parser
+        let d = new Date(str);
+        return isNaN(d) ? null : d;
     }
 
     function parseCSV(text) {
@@ -548,7 +550,10 @@
                         max: 7,  // Locks the top of the scale
                         title: { display: true, text: 'Mood Change', font: { size: 13, weight: 'bold' } },
                         grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { callback: v => (v >= 0 && v !== 0 ? '+' : '') + v },
+                        ticks: { 
+                            stepSize: 1, 
+                            callback: v => (v >= 0 && v !== 0 ? '+' : '') + v 
+                        },
                     },
                 },
             },
