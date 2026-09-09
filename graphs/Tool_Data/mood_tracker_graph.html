@@ -322,7 +322,7 @@
         </div>
 
         <p class="legend-note">
-            Data sourced from MT Observed Mood Tracker (Google Sheets). Each session represents a single patient encounter.
+            Data sourced from Music Therapist Observed Mood Tracker Sheet. Each session represents a single patient encounter.
         </p>
     </div>
 </div>
@@ -577,6 +577,7 @@
                         },
                         grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: {
+                            stepSize: 1,      
                             callback: v => (v >= 0 ? '+' : '') + v,
                         },
                     },

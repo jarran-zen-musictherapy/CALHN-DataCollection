@@ -18,7 +18,7 @@
         }
         .container { 
             background: white; 
-            padding: 30px; 
+            padding: 40px; 
             border-radius: 12px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
         }
@@ -75,6 +75,39 @@
         .atsi-pill { background: rgba(127,196,196,0.2); color: #2e7d7d; }
         .ses-pill  { background: rgba(184,169,232,0.2); color: #5b3fa3; }
 
+        /* Pictogram & Reach Section */
+        .picto-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; margin-top: 25px; }
+        .picto-panel { background: #fdfdfd; border: 1px solid #eee; border-radius: 10px; padding: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .pp-mode { font-size: 16px; font-weight: 600; color: #2c3e50; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid #eee; text-align: center; }
+        .pp-num { font-size: 44px; font-weight: bold; color: #2c3e50; line-height: 1; margin-bottom: 5px; text-align: center; }
+        .pp-num-sub { font-size: 12px; color: #7f8c8d; margin-bottom: 15px; text-align: center; }
+        .pp-scale { font-size: 11px; color: #7f8c8d; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .pp-legend { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .pp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #7f8c8d; font-weight: 500;}
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .icon-field { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; min-height: 80px; }
+
+        .insight-bar { background: rgba(74,155,199,0.1); border-left: 4px solid #4A9BC7; border-radius: 0 8px 8px 0; padding: 15px 20px; display: flex; align-items: center; gap: 20px; margin-bottom: 25px; }
+        .ib-num { font-size: 32px; font-weight: bold; color: #4A9BC7; line-height: 1; }
+        .ib-text strong { font-size: 14px; font-weight: 600; color: #2c3e50; display: block; margin-bottom: 4px; }
+        .ib-text span { font-size: 13px; color: #7f8c8d; }
+
+        /* Breakdown Table */
+        .breakdown { background: #fdfdfd; border: 1px solid #eee; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .bd-title { font-size: 15px; font-weight: 600; color: #2c3e50; margin-bottom: 15px; }
+        .bd-table { width: 100%; border-collapse: collapse; }
+        .bd-table th { font-size: 11px; font-weight: 600; color: #7f8c8d; text-transform: uppercase; text-align: right; padding: 10px; border-bottom: 2px solid #eee; }
+        .bd-table th:first-child { text-align: left; }
+        .bd-table td { padding: 12px 10px; font-size: 13px; color: #2c3e50; text-align: right; border-bottom: 1px solid #eee; vertical-align: middle; transition: background 0.15s; }
+        .bd-table tbody tr:hover td { background: #f9f9f9; }
+        .bd-table td:first-child { text-align: left; font-weight: 500; }
+        .gl { display: flex; align-items: center; gap: 8px; }
+        .tm { font-weight: 600; }
+        .ts { font-size: 11px; color: #7f8c8d; margin-top: 2px; }
+        .bar-wrap { width: 80px; display: flex; justify-content: flex-end; margin-left: auto; }
+        .bar-bg { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 3px; }
+
         .legend-note { text-align: center; font-size: 12px; color: #7f8c8d; margin-top: 15px; font-style: italic; }
         #loading { text-align: center; font-weight: bold; padding: 50px; color: #9B6B9E; font-size: 18px; }
 
@@ -94,6 +127,10 @@
         .modal-chart-container { position: relative; height: 340px; margin-bottom: 20px; }
         .modal-summary-text { font-size: 12px; color: #7f8c8d; text-align: center; margin-bottom: 20px; font-style: italic; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; border-top: 1px solid #eee; }
+        
+        @media (max-width: 768px) {
+            .picto-cols { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -155,7 +192,7 @@
                 <div class="subtext">Disability / Financial / DFV<br>RAH + QEH Aggregated</div>
             </div>
             <div class="summary-card total-card">
-                <h3 id="totalLabel">Total</h3>
+                <h3 id="totalLabel">Total OoS</h3>
                 <div class="value" id="totalValue">-</div>
                 <div class="subtext" id="totalSubtext">-</div>
                 <div class="ratio-display">
@@ -165,7 +202,135 @@
                 </div>
             </div>
         </div>
-        <p class="legend-note" id="legendNote">Music Therapy - Priority Groups</p>
+
+        <div style="margin-top: 50px; border-top: 2px solid #eee; padding-top: 35px;">
+            <h2 style="text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 22px;">Reach & Engagement</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">Comparing total clinical effort (OoS) against distinct individuals impacted</p>
+
+            <div class="picto-cols">
+                <div class="picto-panel">
+                    <div class="pp-mode">Occasions of Service</div>
+                    <div class="pp-num" id="pOosNum">-</div>
+                    <div class="pp-num-sub">sessions with priority group patients</div>
+                    <div class="pp-scale">
+                        <svg width="12" height="17" viewBox="0 0 12 17"><circle cx="6" cy="4.5" r="3" fill="#7f8c8d"/><rect x="2" y="8" width="8" height="7.5" rx="2.5" fill="#7f8c8d" opacity="0.85"/></svg>
+                        each figure = 10 sessions
+                    </div>
+                    <div class="pp-legend">
+                        <div class="pp-legend-item"><span class="dot" style="background:#e8865f"></span>CALD</div>
+                        <div class="pp-legend-item"><span class="dot" style="background:#4da8a8"></span>ATSI</div>
+                        <div class="pp-legend-item"><span class="dot" style="background:#9B6B9E"></span>Vulnerable</div>
+                    </div>
+                    <div class="icon-field" id="oosField"></div>
+                </div>
+
+                <div class="picto-panel">
+                    <div class="pp-mode">Unique Individuals Reached</div>
+                    <div class="pp-num" id="pIndNum">-</div>
+                    <div class="pp-num-sub">estimated priority group individuals seen</div>
+                    <div class="pp-scale">
+                        <svg width="12" height="17" viewBox="0 0 12 17"><circle cx="6" cy="4.5" r="3" fill="#7f8c8d"/><rect x="2" y="8" width="8" height="7.5" rx="2.5" fill="#7f8c8d" opacity="0.85"/></svg>
+                        each figure = 10 individuals
+                    </div>
+                    <div class="pp-legend">
+                        <div class="pp-legend-item"><span class="dot" style="background:#e8865f"></span>CALD</div>
+                        <div class="pp-legend-item"><span class="dot" style="background:#4da8a8"></span>ATSI</div>
+                        <div class="pp-legend-item"><span class="dot" style="background:#9B6B9E"></span>Vulnerable</div>
+                    </div>
+                    <div class="icon-field" id="indField"></div>
+                </div>
+            </div>
+
+            <div class="insight-bar">
+                <div class="ib-num" id="avgRatio">-</div>
+                <div class="ib-text">
+                    <strong>Average sessions per priority group individual</strong>
+                    <span>Not single contacts — sustained therapeutic engagement across the reporting period</span>
+                </div>
+            </div>
+
+            <div class="breakdown">
+                <div class="bd-title">Breakdown by Priority Group</div>
+                <table class="bd-table">
+                    <thead>
+                        <tr>
+                            <th>Group</th>
+                            <th>OoS</th>
+                            <th>% of OoS</th>
+                            <th>Individuals (est.)</th>
+                            <th>Avg sessions</th>
+                            <th>% reach</th>
+                            <th>Reach</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><div class="gl"><span class="dot" style="background:#e8865f"></span>CALD</div></td>
+                            <td><div class="tm" id="bdCaldOos">-</div></td>
+                            <td><div class="tm" id="bdCaldPct">-</div></td>
+                            <td><div class="tm" id="bdCaldInd">-</div><div class="ts" id="bdCaldIndPct">-</div></td>
+                            <td><div class="tm">2.3</div></td>
+                            <td><div class="tm" id="bdCaldReachPct">-</div></td>
+                            <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="barCald" style="background:#e8865f"></div></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="gl"><span class="dot" style="background:#4da8a8"></span>Aboriginal &amp; TSI</div></td>
+                            <td><div class="tm" id="bdAtsiOos">-</div></td>
+                            <td><div class="tm" id="bdAtsiPct">-</div></td>
+                            <td><div class="tm" id="bdAtsiInd">-</div><div class="ts" id="bdAtsiIndPct">-</div></td>
+                            <td><div class="tm">2.2</div></td>
+                            <td><div class="tm" id="bdAtsiReachPct">-</div></td>
+                            <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="barAtsi" style="background:#4da8a8"></div></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="gl"><span class="dot" style="background:#9B6B9E"></span>Vulnerable / Low SES</div></td>
+                            <td><div class="tm" id="bdSesOos">-</div></td>
+                            <td><div class="tm" id="bdSesPct">-</div></td>
+                            <td><div class="tm" id="bdSesInd">-</div><div class="ts" id="bdSesIndPct">-</div></td>
+                            <td><div class="tm">2.9</div></td>
+                            <td><div class="tm" id="bdSesReachPct">-</div></td>
+                            <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" id="barSes" style="background:#9B6B9E"></div></div></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary">
+                <div class="summary-card cald-card">
+                    <h3>CALD Individuals</h3>
+                    <div class="value" id="rCaldValue">-</div>
+                    <div class="subtext" id="rCaldSubtext">-</div>
+                </div>
+                <div class="summary-card atsi-card">
+                    <h3>ATSI Individuals</h3>
+                    <div class="value" id="rAtsiValue">-</div>
+                    <div class="subtext" id="rAtsiSubtext">-</div>
+                </div>
+                <div class="summary-card ses-card">
+                    <h3>Vulnerable Individuals</h3>
+                    <div class="value" id="rSesValue">-</div>
+                    <div class="subtext" id="rSesSubtext">-</div>
+                </div>
+                <div class="summary-card total-card">
+                    <h3 id="rTotalLabel">Total Reach</h3>
+                    <div class="value" id="rTotalValue">-</div>
+                    <div class="subtext" id="rTotalSubtext">-</div>
+                    <div class="ratio-display">
+                        <div class="ratio-item cald-pill" id="rPrCald">-</div>
+                        <div class="ratio-item atsi-pill" id="rPrAtsi">-</div>
+                        <div class="ratio-item ses-pill"  id="rPrSes">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="border-top: 1px solid #eee; padding-top: 25px; margin-top: 45px; text-align: center;">
+            <p class="legend-note" id="legendNote" style="margin-bottom: 5px; font-weight: 600;">Music Therapy - Priority Groups</p>
+            <p style="font-size: 11.5px; color: #95a5a6; font-style: italic; max-width: 800px; margin: 0 auto; line-height: 1.5;">
+                Data via Google Sheets / Sunrise EMR. Individual estimates derived from OoS data using average session frequency per group (CALD 2.3, ATSI 2.2, Vulnerable 2.9). Systematic individual-level tracking proposed as a QI initiative for the next reporting period.
+            </p>
+        </div>
+
     </div>
 </div>
 
@@ -244,7 +409,6 @@
 </div>
 
 <script>
-    // Music Therapy URL (First Tab / Root)
     var url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQTtsFTBW5bK9RBxbWu0IUltxUspuQwjxZhyzx2SmHL-QQObGfHfZ5Sf5GGrHNh_C6NXACQ5LeOGBqd/pub?output=csv';
     
     var rawData = [];
@@ -267,6 +431,29 @@
         atsi:  { border:'#4da8a8', bg:'rgba(127,196,196,0.65)' },
         ses:   { border:'#9B6B9E', bg:'rgba(184,169,232,0.65)' },
     };
+
+    // Reach Conversion Ratios
+    var AVG = { cald: 2.3, atsi: 2.2, ses: 2.9 };
+
+    function personSVG(colour) {
+        return '<svg width="15" height="21" viewBox="0 0 15 21" xmlns="http://www.w3.org/2000/svg">'
+             + '<circle cx="7.5" cy="5" r="3.8" fill="' + colour + '"/>'
+             + '<rect x="2.5" y="9" width="10" height="10" rx="3" fill="' + colour + '" opacity="0.9"/>'
+             + '</svg>';
+    }
+
+    function fillIcons(id, groups, scale) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var html = '';
+        groups.forEach(function(g) {
+            var n = Math.max(1, Math.round(g[0] / scale));
+            for (var i = 0; i < n; i++) {
+                html += '<span style="display:inline-block;line-height:0;margin:1px;">' + personSVG(g[1]) + '</span>';
+            }
+        });
+        el.innerHTML = html;
+    }
 
     function fetchData() {
         fetch(url)
@@ -348,6 +535,7 @@
     function render() {
         var filtered = getFilteredData(currentPeriod);
         
+        // ── CALCULATE OoS ──
         var caldTotal = filtered.reduce(function(a, b) { return a + b.cald; }, 0);
         var atsiTotal = filtered.reduce(function(a, b) { return a + b.atsi; }, 0);
         var sesTotal  = filtered.reduce(function(a, b) { return a + b.ses; }, 0);
@@ -355,7 +543,7 @@
 
         function pct(v) { return total > 0 ? Math.round((v/total)*100) + '%' : '0%'; }
         
-        document.getElementById('totalLabel').textContent = THRF_RANGES[currentPeriod] ? THRF_RANGES[currentPeriod].label : (currentPeriod === 'all' ? 'All Time Total' : currentPeriod + ' Total');
+        document.getElementById('totalLabel').textContent = THRF_RANGES[currentPeriod] ? THRF_RANGES[currentPeriod].label + ' OoS' : (currentPeriod === 'all' ? 'All Time OoS' : currentPeriod + ' OoS');
         document.getElementById('totalValue').textContent = total.toLocaleString();
         document.getElementById('totalSubtext').textContent = filtered.length + ' months of data';
         
@@ -367,6 +555,58 @@
         document.getElementById('atsiRatio').textContent = pct(atsiTotal) + ' ATSI';
         document.getElementById('sesRatio').textContent = pct(sesTotal) + ' SES';
 
+        // ── CALCULATE REACH & ENGAGEMENT ──
+        var caldInd = Math.round(caldTotal / AVG.cald);
+        var atsiInd = Math.round(atsiTotal / AVG.atsi);
+        var sesInd  = Math.round(sesTotal / AVG.ses);
+        var indTotal = caldInd + atsiInd + sesInd;
+        var avgRat = total > 0 ? (total / indTotal).toFixed(1) : '-';
+
+        function pctInd(v) { return indTotal > 0 ? Math.round((v/indTotal)*100) + '%' : '0%'; }
+
+        document.getElementById('pOosNum').textContent = total.toLocaleString();
+        document.getElementById('pIndNum').textContent = '~' + indTotal.toLocaleString();
+        document.getElementById('avgRatio').textContent = avgRat + '×';
+
+        document.getElementById('bdCaldOos').textContent = caldTotal.toLocaleString();
+        document.getElementById('bdAtsiOos').textContent = atsiTotal.toLocaleString();
+        document.getElementById('bdSesOos').textContent = sesTotal.toLocaleString();
+        document.getElementById('bdCaldPct').textContent = pct(caldTotal);
+        document.getElementById('bdAtsiPct').textContent = pct(atsiTotal);
+        document.getElementById('bdSesPct').textContent = pct(sesTotal);
+        document.getElementById('bdCaldInd').textContent = '~' + caldInd;
+        document.getElementById('bdAtsiInd').textContent = '~' + atsiInd;
+        document.getElementById('bdSesInd').textContent = '~' + sesInd;
+        document.getElementById('bdCaldIndPct').textContent = pctInd(caldInd) + ' of reach';
+        document.getElementById('bdAtsiIndPct').textContent = pctInd(atsiInd) + ' of reach';
+        document.getElementById('bdSesIndPct').textContent = pctInd(sesInd) + ' of reach';
+        document.getElementById('bdCaldReachPct').textContent = pctInd(caldInd);
+        document.getElementById('bdAtsiReachPct').textContent = pctInd(atsiInd);
+        document.getElementById('bdSesReachPct').textContent = pctInd(sesInd);
+        document.getElementById('barCald').style.width = pctInd(caldInd);
+        document.getElementById('barAtsi').style.width = pctInd(atsiInd);
+        document.getElementById('barSes').style.width = pctInd(sesInd);
+
+        document.getElementById('rCaldValue').textContent = '~' + caldInd;
+        document.getElementById('rAtsiValue').textContent = '~' + atsiInd;
+        document.getElementById('rSesValue').textContent = '~' + sesInd;
+        document.getElementById('rCaldSubtext').textContent = pctInd(caldInd) + ' of individuals';
+        document.getElementById('rAtsiSubtext').textContent = pctInd(atsiInd) + ' of individuals';
+        document.getElementById('rSesSubtext').textContent = pctInd(sesInd) + ' of individuals';
+        
+        document.getElementById('rTotalLabel').textContent = THRF_RANGES[currentPeriod] ? THRF_RANGES[currentPeriod].label + ' Reach' : (currentPeriod === 'all' ? 'All Time Reach' : currentPeriod + ' Reach');
+        document.getElementById('rTotalValue').textContent = '~' + indTotal;
+        document.getElementById('rTotalSubtext').textContent = filtered.length + ' months of data';
+
+        document.getElementById('rPrCald').textContent = pctInd(caldInd) + ' CALD';
+        document.getElementById('rPrAtsi').textContent = pctInd(atsiInd) + ' ATSI';
+        document.getElementById('rPrSes').textContent = pctInd(sesInd) + ' SES';
+
+        fillIcons('oosField', [[caldTotal, '#e8865f'], [atsiTotal, '#4da8a8'], [sesTotal, '#9B6B9E']], 10);
+        fillIcons('indField', [[caldInd, '#e8865f'], [atsiInd, '#4da8a8'], [sesInd, '#9B6B9E']], 10);
+
+
+        // ── RENDER CHART ──
         var ctx = document.getElementById('pgChart').getContext('2d');
         if (chartObj) chartObj.destroy();
         
@@ -375,7 +615,9 @@
         var atsiData = filtered.map(function(d) { return d.atsi; });
         var sesData = filtered.map(function(d) { return d.ses; });
 
-        document.getElementById('legendNote').textContent = "Music Therapy - Priority Groups (" + (labels.length ? labels[0] + " to " + labels[labels.length-1] : "No Data") + ")";
+        var noteLabel = (labels.length ? labels[0] + " to " + labels[labels.length-1] : "No Data");
+        // Only update export title and date
+        document.getElementById('exportDateLabel').textContent = "Range: " + noteLabel;
 
         if (currentChartType === 'pie') {
             chartObj = new Chart(ctx, {
@@ -523,41 +765,44 @@
     }
 
     function _prepareExport(areaId) {
-        var controls = document.getElementById(areaId === 'modal' ? 'modal-controls' : 'controls');
-        if (controls) controls.style.display = 'none';
+        var controls = document.getElementById('controls');
+        if (controls && areaId === 'main') controls.style.display = 'none';
         
         if (areaId === 'main') {
-            document.getElementById('exportPeriodLabel').textContent = THRF_RANGES[currentPeriod] ? THRF_RANGES[currentPeriod].label : currentPeriod.toUpperCase();
-            document.getElementById('exportDateLabel').textContent = 'Exported: ' + new Date().toLocaleDateString();
+            document.getElementById('exportPeriodLabel').textContent = THRF_RANGES[currentPeriod] ? THRF_RANGES[currentPeriod].label : (currentPeriod === 'all' ? 'All Time Total' : currentPeriod + ' Total');
             document.getElementById('exportTitleOverlay').style.display = 'block';
         }
     }
     
     function _restoreExport(areaId) {
-        var controls = document.getElementById(areaId === 'modal' ? 'modal-controls' : 'controls');
-        if (controls) controls.style.display = 'flex';
+        var controls = document.getElementById('controls');
+        if (controls && areaId === 'main') controls.style.display = 'flex';
         if (areaId === 'main') document.getElementById('exportTitleOverlay').style.display = 'none';
     }
 
     function exportToPNG() {
         _prepareExport('main');
-        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(function(canvas) {
-            _restoreExport('main');
-            var link = document.createElement('a');
-            link.download = "Music_Therapy_Report_" + currentPeriod + ".png";
-            link.href = canvas.toDataURL(); link.click();
-        });
+        setTimeout(function() {
+            html2canvas(document.getElementById('capture-area'), {scale: 2}).then(function(canvas) {
+                _restoreExport('main');
+                var link = document.createElement('a');
+                link.download = "Music_Therapy_Report_" + currentPeriod + ".png";
+                link.href = canvas.toDataURL(); link.click();
+            });
+        }, 50);
     }
     
     function exportToPDF() {
         _prepareExport('main');
-        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(function(canvas) {
-            _restoreExport('main');
-            var jsPDF = window.jspdf.jsPDF;
-            var img = canvas.toDataURL('image/png'), w = canvas.width/2, h = canvas.height/2;
-            var pdf = new jsPDF({orientation: w>h ? 'landscape':'portrait', unit: 'px', format: [w, h]});
-            pdf.addImage(img, 'PNG', 0, 0, w, h); pdf.save("Music_Therapy_Report_" + currentPeriod + ".pdf");
-        });
+        setTimeout(function() {
+            html2canvas(document.getElementById('capture-area'), {scale: 2}).then(function(canvas) {
+                _restoreExport('main');
+                var jsPDF = window.jspdf.jsPDF;
+                var img = canvas.toDataURL('image/png'), w = canvas.width/2, h = canvas.height/2;
+                var pdf = new jsPDF({orientation: w>h ? 'landscape':'portrait', unit: 'px', format: [w, h]});
+                pdf.addImage(img, 'PNG', 0, 0, w, h); pdf.save("Music_Therapy_Report_" + currentPeriod + ".pdf");
+            });
+        }, 50);
     }
 
     function exportModalChart() {
@@ -567,15 +812,17 @@
         document.getElementById('modalExportHeader').style.display = 'block';
         document.getElementById('modalExportTitle').textContent = 'Music Therapy - Custom Range';
         
-        html2canvas(document.querySelector('.modal-box'), {scale: 2}).then(function(canvas) {
-            document.querySelector('.modal-header').style.display = 'flex';
-            document.querySelector('.modal-range-controls').style.display = 'flex';
-            document.querySelector('.modal-footer').style.display = 'flex';
-            document.getElementById('modalExportHeader').style.display = 'none';
-            var link = document.createElement('a');
-            link.download = 'Music_Therapy_Custom_Range.png';
-            link.href = canvas.toDataURL(); link.click();
-        });
+        setTimeout(function() {
+            html2canvas(document.querySelector('.modal-box'), {scale: 2}).then(function(canvas) {
+                document.querySelector('.modal-header').style.display = 'flex';
+                document.querySelector('.modal-range-controls').style.display = 'flex';
+                document.querySelector('.modal-footer').style.display = 'flex';
+                document.getElementById('modalExportHeader').style.display = 'none';
+                var link = document.createElement('a');
+                link.download = 'Music_Therapy_Custom_Range.png';
+                link.href = canvas.toDataURL(); link.click();
+            });
+        }, 50);
     }
 
     function exportModalChartPDF() {
@@ -585,16 +832,18 @@
         document.getElementById('modalExportHeader').style.display = 'block';
         document.getElementById('modalExportTitle').textContent = 'Music Therapy - Custom Range';
 
-        html2canvas(document.querySelector('.modal-box'), {scale: 2}).then(function(canvas) {
-            document.querySelector('.modal-header').style.display = 'flex';
-            document.querySelector('.modal-range-controls').style.display = 'flex';
-            document.querySelector('.modal-footer').style.display = 'flex';
-            document.getElementById('modalExportHeader').style.display = 'none';
-            var jsPDF = window.jspdf.jsPDF;
-            var img = canvas.toDataURL('image/png'), w = canvas.width/2, h = canvas.height/2;
-            var pdf = new jsPDF({orientation: w>h ? 'landscape':'portrait', unit: 'px', format: [w, h]});
-            pdf.addImage(img, 'PNG', 0, 0, w, h); pdf.save('Music_Therapy_Custom_Range.pdf');
-        });
+        setTimeout(function() {
+            html2canvas(document.querySelector('.modal-box'), {scale: 2}).then(function(canvas) {
+                document.querySelector('.modal-header').style.display = 'flex';
+                document.querySelector('.modal-range-controls').style.display = 'flex';
+                document.querySelector('.modal-footer').style.display = 'flex';
+                document.getElementById('modalExportHeader').style.display = 'none';
+                var jsPDF = window.jspdf.jsPDF;
+                var img = canvas.toDataURL('image/png'), w = canvas.width/2, h = canvas.height/2;
+                var pdf = new jsPDF({orientation: w>h ? 'landscape':'portrait', unit: 'px', format: [w, h]});
+                pdf.addImage(img, 'PNG', 0, 0, w, h); pdf.save('Music_Therapy_Custom_Range.pdf');
+            });
+        }, 50);
     }
 
     // Initialize

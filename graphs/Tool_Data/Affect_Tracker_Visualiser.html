@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Therapy - Affect Tracker</title>
+    <title>Art Therapy - ColourWheel Affect Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 40px auto; padding: 20px; background-color: #f5f5f5; }
         .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -190,12 +191,11 @@
         </div>
     </div>
 
-    <script>
+<script>
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJ1eHA4P819L0nY4tDgdY61LVlSlI6ViAbSaoM9VTSqJwWJs1zhD8Sjq_SHVo7dBPbCxKB6CctI_Lz/pub?gid=0&single=true&output=csv";
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        // Data Structure — populated by fetchAndRender()
         let allData = {}; 
 
         const THRF_RANGES = {
@@ -208,70 +208,118 @@
         let chart;
         let currentPeriod = 'all';
 
-        // Helper to format chart scales
-        const chartScales = {
-            y: { min: 1, max: 7, title: { display: true, text: 'Mood Score (1-7)', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-            x: { title: { display: true, text: 'Time', font: { size: 14, weight: 'bold' } }, ticks: { font: { size: 12 } }, grid: { display: false } }
-        };
-
         function createChart(period) {
             const ctx = document.getElementById('moodChart').getContext('2d');
             if (chart) chart.destroy();
 
-            const legendNote = document.getElementById('legendNote');
-            let labels = [];
-            let preVals = [];
-            let postVals = [];
+            document.getElementById('legendNote').textContent = 'Sessions sorted by largest reduction in intensity (top) to lowest (bottom).';
+
+            let sessionsToPlot = [];
             
             if (period === 'all') {
-                legendNote.textContent = 'Yearly averages across all recorded sessions.';
-                labels = Object.keys(allData).sort();
-                labels.forEach(year => {
-                    const stats = getAggregatedStats(allData[year]);
-                    preVals.push(stats.pre);
-                    postVals.push(stats.post);
-                });
+                Object.values(allData).forEach(year => year.forEach(month => sessionsToPlot.push(...month.sessions)));
             } else if (THRF_RANGES[period]) {
-                legendNote.textContent = 'Monthly averages for selected THRF reporting period.';
                 const r = THRF_RANGES[period];
                 const data = getDataForRange(r.startYear, r.startMonth, r.endYear, r.endMonth);
-                labels = data.labels; preVals = data.preVals; postVals = data.postVals;
+                data.allSessions.forEach(m => sessionsToPlot.push(...m.sessions));
             } else {
-                // Specific Year
-                legendNote.textContent = 'Monthly averages for ' + period + '.';
-                labels = months;
-                const yearData = allData[period] || Array(12).fill({pre:0, post:0, change:0, count:0});
-                labels.forEach((m, idx) => {
-                    const dataPoint = yearData[idx];
-                    preVals.push(dataPoint && dataPoint.count > 0 ? Number((dataPoint.pre / dataPoint.count).toFixed(2)) : null);
-                    postVals.push(dataPoint && dataPoint.count > 0 ? Number((dataPoint.post / dataPoint.count).toFixed(2)) : null);
-                });
+                if (allData[period]) {
+                    allData[period].forEach(month => sessionsToPlot.push(...month.sessions));
+                }
             }
 
+            // Sort: Largest drop in score goes to the top to create the waterfall
+            sessionsToPlot.sort((a, b) => {
+                let shiftA = a.preScore - a.postScore;
+                let shiftB = b.preScore - b.postScore;
+                return shiftB - shiftA; 
+            });
+
+            let yLabels = sessionsToPlot.map((_, i) => `Session ${i+1}`);
+            let barData = sessionsToPlot.map(s => [s.preScore, s.postScore]); 
+            let preScatter = sessionsToPlot.map((s, i) => ({ x: s.preScore, y: i, session: s }));
+            let postScatter = sessionsToPlot.map((s, i) => ({ x: s.postScore, y: i, session: s }));
+            let preColors = sessionsToPlot.map(s => s.preHex || '#4A9BC7');
+            let postColors = sessionsToPlot.map(s => s.postHex || '#5BA08A');
+
             chart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar', 
                 data: {
-                    labels: labels,
+                    labels: yLabels,
                     datasets: [
-                        { label: 'Before Session', data: preVals, borderColor: '#4A9BC7', backgroundColor: '#4A9BC7', borderWidth: 3, tension: 0.2, pointRadius: 5, pointHoverRadius: 8 },
-                        { label: 'After Session', data: postVals, borderColor: '#5BA08A', backgroundColor: '#5BA08A', borderWidth: 3, tension: 0.2, pointRadius: 5, pointHoverRadius: 8 }
+                        {
+                            type: 'bar',
+                            label: 'Shift Pathway',
+                            data: barData,
+                            backgroundColor: 'rgba(150, 150, 150, 0.3)', 
+                            barThickness: 3,
+                            borderRadius: 5,
+                            clip: false // <-- Lets the bar bleed over the edge if needed
+                        },
+                        {
+                            type: 'scatter',
+                            label: 'Before Emotion',
+                            data: preScatter,
+                            backgroundColor: preColors,
+                            borderColor: '#ffffff', 
+                            borderWidth: 1.5, 
+                            pointRadius: 7, 
+                            pointHoverRadius: 9,
+                            clip: false // <-- Stops the circle from being chopped
+                        },
+                        {
+                            type: 'scatter',
+                            label: 'After Emotion',
+                            data: postScatter,
+                            backgroundColor: postColors,
+                            borderColor: '#ffffff', 
+                            borderWidth: 1.5, 
+                            pointRadius: 7, 
+                            pointHoverRadius: 9,
+                            clip: false // <-- Stops the circle from being chopped
+                        }
                     ]
                 },
                 options: {
+                    indexAxis: 'y', 
+                    layout: {
+                        padding: {
+                            left: 15,
+                            right: 15
+                        }
+                    },
                     responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { font: { size: 13 }, padding: 15, usePointStyle: true } },
-                        tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', padding: 12, titleFont: { size: 14 }, bodyFont: { size: 13 },
+                    plugins: { 
+                        legend: { 
+                            display: true, position: 'top', 
+                            labels: { usePointStyle: true, filter: (item) => item.text !== 'Shift Pathway' } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.85)', padding: 12, titleFont: { size: 14 }, bodyFont: { size: 13 },
                             callbacks: {
                                 label: function(context) {
-                                    if (context.parsed.y === null) return null;
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' avg';
+                                    if (context.dataset.label === 'Shift Pathway') return null; 
+                                    const s = context.raw.session;
+                                    const isPre = context.dataset.label.includes('Before');
+                                    const emotion = isPre ? s.preEmotion : s.postEmotion;
+                                    return `${isPre ? 'Before' : 'After'}: ${emotion} (Score: ${context.parsed.x}) on ${s.date}`;
                                 }
                             }
                         }
                     },
-                    scales: chartScales,
-                    interaction: { intersect: false, mode: 'index' }
+                    scales: {
+                        x: { 
+                            reverse: true, // <-- THIS IS THE MAGIC FIX 
+                            min: 1, max: 7, 
+                            title: { display: true, text: 'Intensity Score (7 = High, 1 = Low)', font: { size: 14, weight: 'bold' } }, 
+                            grid: { color: 'rgba(0,0,0,0.05)' } 
+                        },
+                        y: { 
+                            display: false, 
+                            grid: { display: false } 
+                        }
+                    },
+                    interaction: { mode: 'y', intersect: false } 
                 }
             });
         }
@@ -281,7 +329,7 @@
             let preSum = 0, postSum = 0, changeSum = 0, totalCount = 0;
             monthArray.forEach(m => {
                 if (m && m.count > 0) {
-                    preSum += m.pre; postSum += m.post; changeSum += m.change; totalCount += m.count;
+                    preSum += m.preSum; postSum += m.postSum; changeSum += m.changeSum; totalCount += m.count;
                 }
             });
             return {
@@ -331,7 +379,6 @@
             updateSummary(period);
         }
 
-        // Robust CSV Parser (handles commas inside quotes)
         function parseCSV(text) {
             const lines = text.trim().split('\n');
             const parseLine = (line) => {
@@ -369,7 +416,7 @@
                 const mIdx = d.getMonth();
 
                 if (!structure[year]) {
-                    structure[year] = Array(12).fill(null).map(() => ({ pre: 0, post: 0, change: 0, count: 0 }));
+                    structure[year] = Array(12).fill(null).map(() => ({ preSum: 0, postSum: 0, changeSum: 0, count: 0, sessions: [], year: year, month: mIdx }));
                 }
 
                 const pre = parseFloat(row['preScore']);
@@ -378,10 +425,20 @@
                 if (isNaN(change) && !isNaN(pre) && !isNaN(post)) change = post - pre;
 
                 if (!isNaN(pre) && !isNaN(post)) {
-                    structure[year][mIdx].pre += pre;
-                    structure[year][mIdx].post += post;
-                    structure[year][mIdx].change += change;
+                    structure[year][mIdx].preSum += pre;
+                    structure[year][mIdx].postSum += post;
+                    structure[year][mIdx].changeSum += change;
                     structure[year][mIdx].count += 1;
+                    
+                    structure[year][mIdx].sessions.push({
+                        preScore: pre,
+                        postScore: post,
+                        preHex: row['preHex'] || '#4A9BC7',
+                        postHex: row['postHex'] || '#5BA08A',
+                        preEmotion: row['preEmotion'] || 'Unspecified',
+                        postEmotion: row['postEmotion'] || 'Unspecified',
+                        date: d.toLocaleDateString()
+                    });
                 }
             }
             return structure;
@@ -427,93 +484,6 @@
             }
         }
 
-        // ─── Date Range Modal ────────────────────────────────────────────────
-        let modalChartInstance = null;
-
-        function openDateRangeModal() {
-            document.getElementById('dateRangeModal').style.display = 'flex';
-            document.getElementById('modalError').textContent = '';
-            updateModalChart();
-        }
-
-        function closeDateRangeModal() {
-            document.getElementById('dateRangeModal').style.display = 'none';
-            if (modalChartInstance) { modalChartInstance.destroy(); modalChartInstance = null; }
-        }
-
-        function handleModalOverlayClick(event) {
-            if (event.target === document.getElementById('dateRangeModal')) closeDateRangeModal();
-        }
-
-        function getDataForRange(startYear, startMonth, endYear, endMonth) {
-            const labels = [], preVals = [], postVals = [], rawStats = [];
-            let y = startYear, m = startMonth;
-            while (y < endYear || (y === endYear && m <= endMonth)) {
-                labels.push(months[m] + ' ' + y);
-                const yd = allData[y] || Array(12).fill({pre:0, post:0, change:0, count:0});
-                const mData = yd[m];
-                rawStats.push(mData);
-                
-                if (mData && mData.count > 0) {
-                    preVals.push(Number((mData.pre / mData.count).toFixed(2)));
-                    postVals.push(Number((mData.post / mData.count).toFixed(2)));
-                } else {
-                    preVals.push(null); postVals.push(null);
-                }
-                
-                m++; if (m > 11) { m = 0; y++; }
-            }
-            return { labels, preVals, postVals, rawStats };
-        }
-
-        function updateModalChart() {
-            const startMonth = parseInt(document.getElementById('modalStartMonth').value);
-            const startYear  = parseInt(document.getElementById('modalStartYear').value);
-            const endMonth   = parseInt(document.getElementById('modalEndMonth').value);
-            const endYear    = parseInt(document.getElementById('modalEndYear').value);
-            const errEl      = document.getElementById('modalError');
-
-            if (startYear > endYear || (startYear === endYear && startMonth > endMonth)) {
-                errEl.textContent = 'Start date must be before end date.';
-                return;
-            }
-            errEl.textContent = '';
-
-            const data = getDataForRange(startYear, startMonth, endYear, endMonth);
-            const ctx = document.getElementById('modalChart').getContext('2d');
-            if (modalChartInstance) modalChartInstance.destroy();
-
-            modalChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        { label: 'Before', data: data.preVals, borderColor: '#4A9BC7', backgroundColor: '#4A9BC7', borderWidth: 2, pointRadius: 4 },
-                        { label: 'After', data: data.postVals, borderColor: '#5BA08A', backgroundColor: '#5BA08A', borderWidth: 2, pointRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 12 }, padding: 12, usePointStyle: true } } },
-                    scales: chartScales, interaction: { intersect: false, mode: 'index' }
-                }
-            });
-
-            const stats = getAggregatedStats(data.rawStats);
-            document.getElementById('modalTotalValue').textContent = stats.count.toLocaleString();
-            document.getElementById('modalTotalSubtext').textContent = data.labels.length + ' months';
-            document.getElementById('modalPreValue').textContent = stats.pre !== null ? stats.pre.toFixed(1) : '-';
-            document.getElementById('modalPostValue').textContent = stats.post !== null ? stats.post.toFixed(1) : '-';
-            const changeStr = stats.change !== null ? (stats.change > 0 ? '+' : '') + stats.change.toFixed(1) : '-';
-            document.getElementById('modalChangeValue').textContent = changeStr;
-
-            const startLabel = months[startMonth] + ' ' + startYear;
-            const endLabel = months[endMonth] + ' ' + endYear;
-            document.getElementById('modalExportDateRange').textContent = startLabel + ' to ' + endLabel;
-            document.getElementById('modalSummaryText').textContent = startLabel + ' \u2013 ' + endLabel;
-        }
-
-        // ─── Export Functions ────────────────────────────────────────────────
         function _prepareExport() {
             const controls = document.getElementById('controls');
             const overlay  = document.getElementById('exportTitleOverlay');
@@ -548,7 +518,7 @@
                     link.download = _buildFilename('png');
                     link.href = url; link.click(); URL.revokeObjectURL(url);
                 });
-            }).catch(error => { _restoreExport(controls); alert('Export failed. Please try again.'); });
+            }).catch(error => { _restoreExport(controls); alert('Export failed.'); });
         }
 
         function exportToPDF() {
@@ -561,53 +531,7 @@
                 const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
                 pdf.addImage(imgData, 'PNG', 0, 0, w, h);
                 pdf.save(_buildFilename('pdf'));
-            }).catch(error => { _restoreExport(controls); alert('Export failed. Please try again.'); });
-        }
-
-        function exportModalChart() {
-            const header = document.querySelector('.modal-header');
-            const controls = document.querySelector('.modal-range-controls');
-            const footer = document.querySelector('.modal-footer');
-            const exportHeader = document.getElementById('modalExportHeader');
-
-            header.style.display = 'none'; controls.style.display = 'none'; footer.style.display = 'none'; exportHeader.style.display = 'block';
-            document.getElementById('modalExportTitle').textContent = document.querySelector('h1').textContent;
-
-            html2canvas(document.querySelector('.modal-box'), { backgroundColor: '#ffffff', scale: 2, logging: false }).then(canvas => {
-                header.style.display = 'flex'; controls.style.display = 'flex'; footer.style.display = 'flex'; exportHeader.style.display = 'none';
-                canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.download = 'Music_Therapy_AffectTracker_Custom_' + new Date().toISOString().split('T')[0] + '.png';
-                    link.href = url; link.click(); URL.revokeObjectURL(url);
-                });
-            }).catch(error => {
-                header.style.display = 'flex'; controls.style.display = 'flex'; footer.style.display = 'flex'; exportHeader.style.display = 'none';
-                alert('Export failed. Please try again.');
-            });
-        }
-
-        function exportModalChartPDF() {
-            const header = document.querySelector('.modal-header');
-            const controls = document.querySelector('.modal-range-controls');
-            const footer = document.querySelector('.modal-footer');
-            const exportHeader = document.getElementById('modalExportHeader');
-
-            header.style.display = 'none'; controls.style.display = 'none'; footer.style.display = 'none'; exportHeader.style.display = 'block';
-            document.getElementById('modalExportTitle').textContent = document.querySelector('h1').textContent;
-
-            html2canvas(document.querySelector('.modal-box'), { backgroundColor: '#ffffff', scale: 2, logging: false }).then(canvas => {
-                header.style.display = 'flex'; controls.style.display = 'flex'; footer.style.display = 'flex'; exportHeader.style.display = 'none';
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png');
-                const w = canvas.width / 2, h = canvas.height / 2;
-                const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
-                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
-                pdf.save('Music_Therapy_AffectTracker_Custom_' + new Date().toISOString().split('T')[0] + '.pdf');
-            }).catch(error => {
-                header.style.display = 'flex'; controls.style.display = 'flex'; footer.style.display = 'flex'; exportHeader.style.display = 'none';
-                alert('Export failed. Please try again.');
-            });
+            }).catch(error => { _restoreExport(controls); alert('Export failed.'); });
         }
 
         // Initialise

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< HEAD
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Music Therapy — Mood</title>
@@ -9,12 +10,105 @@
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #FAFAF8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
   #app { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 24px; }
 </style>
+=======
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/VAS-tracker.manifest.json">
+    <link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/vas-icon-192.png">
+    <title>Music Therapy — Mood</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="MT Mood">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+      * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+        -webkit-tap-highlight-color: transparent; 
+        /* Prevents accidental text selection, making it feel like a native app */
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      body { 
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        background: #FAFAF8; 
+        min-height: 100vh; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        /* Prevents the "bounce" effect when scrolling on iOS */
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #app { 
+        width: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 24px; 
+      }
+
+      textarea {
+        -webkit-user-select: text; /* Allow typing in the notes box */
+        user-select: text;
+      }
+
+      textarea:focus { border-color: #94A3B8 !important; }
+
+      /* Subtle entry animation for the whole app */
+      #app {
+        animation: fadeIn 0.6s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .sync-indicator {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.05);
+        color: #1E293B;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+      }
+      .sync-indicator.pending {
+        background: #FEF08A;
+        color: #854D0E;
+      }
+      .sync-indicator.offline {
+        background: #FECACA;
+        color: #991B1B;
+      }
+    </style>
+>>>>>>> 1bb0daa91f012527934244f8868a685f812a999a
 </head>
 <div id="app"></div>
+<div id="syncIndicator" class="sync-indicator">🟢 All Synced</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
+const STORAGE_KEY = 'vas_mood_logs';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxYmUJtxJlmdg7Wqf7cXBhkfvj0mF5NF2ruDpPJRND4fSru-RU3FSsp1rozHg3MOcCO/exec';
+
 const e = React.createElement;
 const { useState, useEffect } = React;
 
@@ -101,6 +195,10 @@ function App() {
   const [submitted, setSubmitted] = useState(false);
   const [showPost, setShowPost] = useState(false);
   const [showDone, setShowDone] = useState(false);
+<<<<<<< HEAD
+=======
+  const [isSubmitting, setIsSubmitting] = useState(false);
+>>>>>>> 1bb0daa91f012527934244f8868a685f812a999a
 
   useEffect(() => {
     if (pre !== null && !showPost) {
@@ -121,6 +219,34 @@ function App() {
     setSubmitted(false); setShowPost(false); setShowDone(false);
   };
 
+<<<<<<< HEAD
+=======
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    const timestamp = new Date().toLocaleString('en-AU', {
+      timeZone: 'Australia/Adelaide',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    const record = {
+      id: Date.now().toString(),
+      timestamp: timestamp,
+      pre: pre,
+      post: post,
+      notes: notes,
+      syncStatus: "pending"
+    };
+    let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    records.push(record);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    updateSyncUI();
+    setSubmitted(true);
+    setIsSubmitting(false);
+    attemptSync();
+  };
+
+>>>>>>> 1bb0daa91f012527934244f8868a685f812a999a
   if (submitted) {
     const diff = post - pre;
     const ds = diff > 0 ? '+' + diff : '' + diff;
@@ -154,6 +280,10 @@ function App() {
     ),
     e(FaceRow, { label: 'Before Session', faces: FACES, value: pre, onTap: v => setPre(v), visible: true }),
     e(FaceRow, { label: 'After Session', faces: FACES, value: post, onTap: v => setPost(v), visible: showPost }),
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 1bb0daa91f012527934244f8868a685f812a999a
     e('div', {
       style: {
         textAlign: 'center', marginTop: 8,
@@ -172,6 +302,74 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('app')).render(e(App));
+
+async function attemptSync() {
+  if (!navigator.onLine) {
+    updateSyncUI();
+    return;
+  }
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pending = records.filter(r => r.syncStatus === "pending");
+  if (pending.length === 0) return;
+
+  for (let record of pending) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      });
+      let idx = records.findIndex(r => r.id === record.id);
+      if (idx !== -1) {
+        records[idx].syncStatus = "synced";
+        updateSyncUI();
+      }
+    } catch (err) {
+      console.warn('[Sync] Failed, will retry:', err);
+      break;
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
+}
+
+function updateSyncUI() {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const pendingCount = records.filter(r => r.syncStatus === "pending").length;
+
+  if (!navigator.onLine) {
+    indicator.textContent = `🔴 Offline - ${pendingCount} Pending`;
+    indicator.className = 'sync-indicator offline';
+  } else if (pendingCount > 0) {
+    indicator.textContent = `🟠 ${pendingCount} Pending Sync...`;
+    indicator.className = 'sync-indicator pending';
+  } else {
+    indicator.textContent = `🟢 All Synced`;
+    indicator.className = 'sync-indicator';
+  }
+}
+
+window.addEventListener('online', () => { attemptSync(); updateSyncUI(); });
+window.addEventListener('offline', updateSyncUI);
+
+setInterval(attemptSync, 120000);
+
+window.addEventListener('load', () => { attemptSync(); updateSyncUI(); });
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

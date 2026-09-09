@@ -2,103 +2,92 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Colour Track">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0E0F13">
+
+<link rel="manifest" href="/CALHN-DataCollection/Clinical_Tools/Affective_Colour_Tracker.manifest.json" />
+<link rel="apple-touch-icon" href="/CALHN-DataCollection/Clinical_Tools/colour-icon-192.png" />
+
 <title>Affective Colour Tracker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    /* Prevent grey tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent; 
+    /* Prevent accidental text selection */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Force "App" Behavior */
+  html, body {
+    height: 100%;
+    width: 100%;
+    /* Prevent "rubber-banding" scroll behavior on iOS */
+    overflow: hidden; 
+    position: fixed;
+  }
 
   body {
     background-color: rgb(14,15,19);
     color: #e8e6df;
     font-family: 'DM Mono', monospace;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     transition: background-color 0.6s ease;
-    overflow-x: hidden;
+    /* Safe Area logic for iPhone notches / home bar */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* ── Header ──────────────────────────────────────────────────── */
-  .step-header {
+  /* Container screens to handle internal scrolling if needed */
+  #stepScreen, #summaryScreen {
     width: 100%;
-    max-width: 600px;
-    padding: 1.5rem 1.5rem 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .step-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
-  }
-
-  /* ── Wheel & Legend ─────────────────────────────────────────── */
-  .wheel-stage {
-    position: relative;
-    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 2vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #summaryScreen { display: none; padding: 2rem 1.5rem; max-width: 500px; gap: 2rem; }
+
+  /* Allow text interaction ONLY in the text area */
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: #fff; font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    padding: 1rem; resize: none; height: 70px; outline: none;
   }
 
-  .wheel-container {
-    position: relative;
-    width: min(78vw, 440px);
-    height: min(78vw, 440px);
-    cursor: crosshair;
-  }
+  /* ── Header ──────────────────────────────────────────────────── */
+  .step-header { width: 100%; max-width: 600px; padding: 1.5rem 1.5rem 0.5rem; display: flex; align-items: center; justify-content: center; }
+  .step-label { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
 
-  .label-ring {
-    position: absolute;
-    inset: -38px;
-    pointer-events: none;
-    z-index: 1;
-  }
-
+  /* ── Wheel & Legend ─────────────────────────────────────────── */
+  .wheel-stage { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 2vh; }
+  .wheel-container { position: relative; width: min(78vw, 440px); height: min(78vw, 440px); cursor: crosshair; }
+  .label-ring { position: absolute; inset: -38px; pointer-events: none; z-index: 1; }
   .segment-label {
-    position: absolute;
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.25);
-    transform: translate(-50%, -50%);
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    position: absolute; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.25); transform: translate(-50%, -50%); transition: all 0.2s ease; white-space: nowrap;
   }
+  .segment-label.active { color: #fff; font-weight: 700; font-size: 0.7rem; text-shadow: 0 0 12px rgba(255,255,255,0.6); }
 
-  .segment-label.active { 
-    color: #fff; 
-    font-weight: 700; 
-    font-size: 0.7rem; 
-    text-shadow: 0 0 12px rgba(255,255,255,0.6); 
-  }
-
-  canvas.wheel {
-    width: 100%; height: 100%;
-    border-radius: 50%;
-    display: block;
-    box-shadow: 0 10px 60px rgba(0,0,0,0.8);
-    z-index: 2;
-  }
-
-  .pin {
-    position: absolute;
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    border: 3px solid #fff;
-    transform: translate(-50%,-50%);
-    pointer-events: none;
-    display: none;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    z-index: 10;
-  }
+  canvas.wheel { width: 100%; height: 100%; border-radius: 50%; display: block; box-shadow: 0 10px 60px rgba(0,0,0,0.8); z-index: 2; }
+  .pin { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; transform: translate(-50%,-50%); pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0,0,0,0.5); z-index: 10; }
 
   /* ── Readout ─────────────────────────────────────────────────── */
   .readout { text-align: center; margin-top: 2rem; min-height: 5.5rem; }
@@ -109,12 +98,6 @@
   .controls { width: min(85vw, 480px); margin-top: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
   .intensity-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; margin: 1.2rem 0; }
   .intensity-fill { height: 100%; background: #fff; border-radius: 2px; transition: width 0.2s; width: 0%; }
-  
-  textarea {
-    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px; color: #fff; font-family: 'DM Mono', monospace; font-size: 0.8rem;
-    padding: 1rem; resize: none; height: 70px; outline: none;
-  }
 
   /* ── Actions ─────────────────────────────────────────────────── */
   .step-actions { margin-top: auto; padding: 2rem 0 3rem; }
@@ -123,14 +106,36 @@
     font-size: 0.8rem; text-transform: uppercase; padding: 1.2rem 3.5rem; border: none;
     border-radius: 50px; cursor: pointer; transition: all 0.2s;
   }
-  button.primary:disabled { opacity: 0.2; cursor: default; }
+  button.primary:active { transform: scale(0.96); }
+  button.primary:disabled { opacity: 0.2; cursor: default; transform: none; }
 
   /* ── Summary Screen ──────────────────────────────────────────── */
-  #summaryScreen { display: none; width: 100%; max-width: 500px; padding: 3rem 1.5rem; flex-direction: column; align-items: center; gap: 2rem; }
   .summary-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; font-style: italic; color: #e8e6df; }
   .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
   .summary-card { background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); }
   .shift-box { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; font-size: 0.85rem; text-align: center; line-height: 1.6; }
+  .sync-indicator {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.05);
+    color: #1E293B;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .sync-indicator.pending {
+    background: #FEF08A;
+    color: #854D0E;
+  }
+  .sync-indicator.offline {
+    background: #FECACA;
+    color: #991B1B;
+  }
 </style>
 </head>
 <body>
@@ -167,14 +172,14 @@
   <div class="summary-cards" id="summaryCards"></div>
   <div class="shift-box" id="shiftBox"></div>
   
-  <div style="display:flex; flex-direction:column; gap:1rem; width:100%; align-items:center;">
+  <div style="display:flex; flex-direction:column; gap:1rem; width:100%; align-items:center; margin-top: auto; padding-bottom: 2rem;">
     <button class="primary" id="saveBtn" style="width:100%;" onclick="saveRecord()">Save to Log</button>
+    <div id="syncIndicator" class="sync-indicator">🟢 All Synced</div>
     <button style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em; padding:1rem;" onclick="exportCSV()">Download CSV History</button>
   </div>
 </div>
 
 <script>
-// 1. Corrected Data: Top (0) is Red, Right (90) is Green-Yellow, Bottom (180) is Cyan, Left (270) is Violet.
 const SEGMENTS = [
   { hue: 0,   label: 'Angry',     family: 'Tension' }, 
   { hue: 30,  label: 'Anxious',   family: 'Fear' },    
@@ -190,7 +195,6 @@ const SEGMENTS = [
   { hue: 330, label: 'Grief',     family: 'Loss' }   
 ];
 
-// 2. Align Labels: Top is 0 degrees (CSS -90 degrees)
 const ring = document.getElementById('labelRing');
 SEGMENTS.forEach((s, i) => {
   const label = document.createElement('div');
@@ -204,7 +208,6 @@ SEGMENTS.forEach((s, i) => {
   ring.appendChild(label);
 });
 
-// 3. Draw Visual Wheel: Shift drawing so 0 is exactly at the top (-90 offset)
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -217,14 +220,12 @@ const ctx = canvas.getContext('2d', { willReadFrequently: true });
     g.addColorStop(1, `hsla(${a}, 100%, 35%, 1)`);
     ctx.beginPath();
     ctx.moveTo(cx, cx);
-    // Shift by 90 so HUE 0 = TOP
     ctx.arc(cx, cx, cx, (a - 91.5) * Math.PI / 180, (a - 88.5) * Math.PI / 180);
     ctx.fillStyle = g;
     ctx.fill();
   }
 })();
 
-// Solid color blender to prevent milky pastels
 function floodBg(r, g, b, alpha) {
   document.body.style.backgroundColor =
     'rgb(' + Math.round(14 + (r - 14) * alpha) + ',' +
@@ -251,15 +252,12 @@ function handleTap(e) {
   const dist = Math.sqrt((px-cx)**2 + (py-cx)**2);
   if(dist > cx) return;
 
-  // Spatial Intensity
   const intensity = Math.max(1, Math.min(10, Math.round((dist / cx) * 10)));
   
-  // Angle for Hue: atan2 puts 0 at right. +90 puts 0 at top.
   let angle = Math.atan2(py - cx, px - cx) * (180 / Math.PI);
   angle = (angle + 90) % 360;
   if (angle < 0) angle += 360;
 
-  // Find Closest Segment Math
   let bestIdx = 0, minDiff = 360;
   SEGMENTS.forEach((s, i) => {
     let diff = Math.abs(s.hue - angle);
@@ -270,10 +268,8 @@ function handleTap(e) {
   const data = ctx.getImageData(px, py, 1, 1).data;
   const hex = rgbToHex(data[0], data[1], data[2]);
 
-  // Dynamic Background: Links visual intensity of color to the background flood
   floodBg(data[0], data[1], data[2], (intensity / 10) * 0.45);
 
-  // UI Updates
   document.querySelectorAll('.segment-label').forEach(l => l.classList.remove('active'));
   document.getElementById('lbl-' + bestIdx).classList.add('active');
 
@@ -352,11 +348,12 @@ function showSummary() {
   floodBg(captured.post.r, captured.post.g, captured.post.b, 0.25);
 }
 
-// THE GOOGLE SHEETS WEBHOOK URL
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwG32LVM1yUOuojKADKUNN80YbVN0RJo6AS1yBLu26cbatyMsEW7DkbaN_c-7FV9Sqc/exec";
+const STORAGE_KEY = 'affective_colour_logs';
 
 function saveRecord() {
   const record = {
+    id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     preScore: captured.pre.intensity,
     postScore: captured.post.intensity,
@@ -366,32 +363,83 @@ function saveRecord() {
     preEmotion: captured.pre.label,
     postEmotion: captured.post.label,
     preNote: captured.pre.note || "",
-    postNote: captured.post.note || ""
+    postNote: captured.post.note || "",
+    syncStatus: "pending"
   };
 
-  // 1. Save locally as backup
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   records.push(record);
-  localStorage.setItem('affective_colour_logs', JSON.stringify(records));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
 
-  // 2. Change button text to show it's working
   const btn = document.getElementById('saveBtn');
-  btn.textContent = "Syncing...";
-  btn.disabled = true;
+  if (btn) {
+    btn.textContent = "✓ Saved";
+    btn.disabled = true;
+  }
 
-  // 3. Send to Google Sheets
-  fetch(WEBHOOK_URL, {
-    method: 'POST',
-    mode: 'no-cors', 
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(record)
-  }).then(() => {
-    alert('Session Logged & Synced to Sheet.');
-    location.reload();
-  }).catch(err => {
-    alert('Saved locally, but sync failed. Check connection.');
-    location.reload();
-  });
+  attemptSync();
+  setTimeout(() => { location.reload(); }, 1500);
 }
+
+async function attemptSync() {
+  if (!navigator.onLine) {
+    updateSyncUI();
+    return;
+  }
+
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pending = records.filter(r => r.syncStatus === "pending");
+  if (pending.length === 0) return;
+
+  for (let record of pending) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      });
+      let idx = records.findIndex(r => r.id === record.id);
+      if (idx !== -1) {
+        records[idx].syncStatus = "synced";
+        updateSyncUI();
+      }
+    } catch (err) {
+      console.warn('[Sync] Failed, will retry:', err);
+      break;
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  updateSyncUI();
+}
+
+function updateSyncUI() {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const pendingCount = records.filter(r => r.syncStatus === "pending").length;
+
+  if (!navigator.onLine) {
+    indicator.textContent = `🔴 Offline - ${pendingCount} Pending`;
+    indicator.className = 'sync-indicator offline';
+  } else if (pendingCount > 0) {
+    indicator.textContent = `🟠 ${pendingCount} Pending Sync...`;
+    indicator.className = 'sync-indicator pending';
+  } else {
+    indicator.textContent = `🟢 All Synced`;
+    indicator.className = 'sync-indicator';
+  }
+}
+
+window.addEventListener('online', () => { attemptSync(); updateSyncUI(); });
+window.addEventListener('offline', updateSyncUI);
+
+setInterval(attemptSync, 120000);
+
+window.addEventListener('load', () => { attemptSync(); updateSyncUI(); });
 
 function exportCSV() {
   if(!records.length) return alert("No logs found to export.");
@@ -403,6 +451,15 @@ function exportCSV() {
   a.download = `Affective_Colour_Log_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/CALHN-DataCollection/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+        .catch(err => console.error('[PWA] Service Worker failed:', err));
+    });
+  }
 </script>
 </body>
 </html>
