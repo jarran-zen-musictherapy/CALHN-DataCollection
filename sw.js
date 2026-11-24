@@ -1,5 +1,5 @@
 // Increment version number here whenever HTML/CSS/JS is updated
-const CACHE_NAME = 'calhn-cache-v1';
+const CACHE_NAME = 'calhn-cache-v2';
 
 const ASSETS_TO_CACHE = [
   // Dashboard
@@ -22,7 +22,13 @@ const ASSETS_TO_CACHE = [
   '/CALHN-DataCollection/Clinical_Tools/VAS-tracker.html',
   '/CALHN-DataCollection/Clinical_Tools/VAS-tracker.manifest.json',
   '/CALHN-DataCollection/Clinical_Tools/vas-icon-192.png',
-  '/CALHN-DataCollection/Clinical_Tools/vas-icon-512.png'
+  '/CALHN-DataCollection/Clinical_Tools/vas-icon-512.png',
+
+  // SAHR Activity Parser
+  '/CALHN-DataCollection/Data_Tools/SAHR_Activity_Parser.html',
+  '/CALHN-DataCollection/Data_Tools/sahr_parser_core.js',
+  '/CALHN-DataCollection/Data_Tools/sahr_parser_app.js',
+  '/CALHN-DataCollection/Data_Tools/vendor/xlsx.full.min.js'
 ];
 
 // INSTALL: Cache all assets on first load
@@ -58,10 +64,22 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// FETCH: Serve from cache, fall back to network
+// FETCH: Pages (HTML) are network-first so updates show immediately, with the cache as offline fallback.
+// Everything else is served from cache, falling back to network.
 // POST requests (Google Sheets sync) are never intercepted
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return res;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(
