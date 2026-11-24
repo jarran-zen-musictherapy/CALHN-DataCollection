@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Privacy: this page can only run its own scripts and cannot send data anywhere (connect-src 'none', no forms, no external resources). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAHR Activity Parser</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#E67E73 0%,#9B6B9E 50%,#4A9BC7 100%);min-height:100vh;padding:40px 20px;color:#2c3e50}
+.container{max-width:1100px;margin:0 auto}
+.header{background:#fff;padding:32px 40px;border-radius:12px 12px 0 0;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+h1{font-size:30px;margin-bottom:6px}
+.subtitle{color:#7f8c8d;font-size:16px}
+.back{font-size:13px;color:#9B6B9E;text-decoration:none;display:inline-block;margin-bottom:12px}
+.privacy{background:#2c3e50;color:#fff;padding:18px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 24px;font-size:14px;line-height:1.45}
+.privacy b{display:block;color:#a8e6c1}
+.card{background:#fff;padding:24px 28px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);margin-top:20px;border-left:5px solid #9B6B9E}
+.card h2{font-size:18px;margin-bottom:6px}
+.card p.hint{font-size:14px;color:#7f8c8d;line-height:1.5;margin-bottom:14px}
+label{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
+input[type=password],input[type=text],select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid #cfd6dc;border-radius:6px;width:100%;max-width:420px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:10px 16px;border-radius:6px;font-size:14px;font-weight:600;border:none;cursor:pointer;color:#fff;background:#2c3e50;min-height:44px}
+.btn.secondary{background:#95a5a6}.btn.special{background:#9B6B9E}.btn.danger{background:#c0392b}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.drop:focus-visible{outline:3px solid #4A9BC7;outline-offset:2px}
+.drop{border:2px dashed #9B6B9E;border-radius:8px;padding:28px;text-align:center;color:#7f8c8d;cursor:pointer;font-size:15px}
+.drop.over{background:#f6eff7}
+.files{font-size:14px;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:6px 0 16px}
+.stat{background:#f5f7f8;border-radius:8px;padding:12px 14px}
+.stat .n{font-size:28px;font-weight:700;line-height:1.1}
+.stat .l{font-size:13px;color:#7f8c8d}
+.check{padding:12px 14px;border-radius:8px;font-size:14px;margin-bottom:14px;line-height:1.45}
+.check.ok{background:#e8f6ee;color:#1e6b41}.check.bad{background:#fdecea;color:#922b21}
+.err{background:#fdecea;color:#922b21;padding:12px 14px;border-radius:8px;font-size:14px;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #e5e9ec;white-space:nowrap}
+th{font-size:12px;color:#7f8c8d;font-weight:600}
+td.num,th.num{text-align:right}
+.scroll{overflow-x:auto;max-height:420px;overflow-y:auto}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.mini td{padding:4px 8px}
+.hidden{display:none}
+.footer{background:#fff;padding:20px;border-radius:0 0 12px 12px;margin-top:20px;text-align:center;color:#7f8c8d;font-size:13px;line-height:1.5}
+.toast{font-size:14px;color:#1e6b41;font-weight:600}
+@media(max-width:600px){.header,.privacy{padding:22px}.card{padding:18px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a class="back" href="../index.html">← Creative Therapies dashboard</a>
+    <h1>SAHR Activity Parser</h1>
+    <p class="subtitle">Turns a SAHR Allied Health activity report into de-identified rows for the MT Master Data Sheet.</p>
+  </div>
+  <div class="privacy" aria-label="Privacy safeguards">
+    <div><b>Stays on this computer</b>Files are read in your browser. The page is blocked from sending data anywhere.</div>
+    <div><b>No names, no MRNs out</b>Names and URNs are never written out. URNs become coded Patient IDs.</div>
+    <div><b>Nothing kept</b>Nothing about patients is saved. Close the tab or press Clear and it is gone.</div>
+    <div><b>Checked before release</b>Output is scanned for any name or URN before you can copy it.</div>
+  </div>
+
+  <div class="card">
+    <h2>1 · Team key</h2>
+    <p class="hint">The team key turns each URN into the same Patient ID for every clinician, every month. Use the key your team agreed. It is never saved or sent; without it, IDs cannot be traced back to a patient.</p>
+    <label for="pass">Team key</label>
+    <div class="row">
+      <input type="password" id="pass" autocomplete="off" spellcheck="false">
+      <button class="btn secondary" id="show" type="button">Show</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Activity report</h2>
+    <p class="hint">Export the Allied Health activity report from SAHR (.xls or .xlsx) for your date range. You can add several clinicians' reports at once.</p>
+    <div class="drop" id="drop" tabindex="0" role="button">Drop SAHR report files here, or click to choose</div>
+    <input type="file" id="file" accept=".xls,.xlsx,.csv" multiple class="hidden">
+    <div class="files" id="files"></div>
+    <div class="err hidden" id="err" role="alert"></div>
+  </div>
+
+  <div class="card hidden" id="wardCard">
+    <h2>3 · Check ward mapping</h2>
+    <p class="hint">SAHR service names are matched to the Master Data Sheet's ward list. Change any that are wrong; your choices are remembered on this computer (service names only).</p>
+    <div class="scroll"><table class="mini"><thead><tr><th>SAHR clinical service</th><th class="num">OoS</th><th>Ward on data sheet</th></tr></thead><tbody id="wards"></tbody></table></div>
+  </div>
+
+  <div class="card hidden" id="outCard">
+    <h2>4 · Result</h2>
+    <div class="stats" id="stats"></div>
+    <div id="check"></div>
+    <div class="cols">
+      <div><label>Excluded (not counted as OoS)</label><table class="mini"><tbody id="excl"></tbody></table></div>
+      <div><label>Sessions by ward</label><table class="mini"><tbody id="byWard"></tbody></table></div>
+    </div>
+    <p class="hint" style="margin-top:16px">Paste into the DATA sheet at column A of the first empty row, using <b>Paste Special → Values</b>. Columns A–AE are filled; demographics, referral reasons and priority groups are left blank for you to complete.</p>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn" id="copy" type="button">Copy rows for Master Data Sheet</button>
+      <button class="btn special" id="csv" type="button">Download CSV</button>
+      <button class="btn danger" id="clear" type="button">Clear everything</button>
+      <span class="toast" id="toast" aria-live="polite"></span>
+    </div>
+    <div class="scroll"><table><thead><tr><th>Patient ID</th><th>Site</th><th>Year</th><th>Month</th><th>Ward</th><th>Session type</th><th class="num">No. sessions</th></tr></thead><tbody id="preview"></tbody></table></div>
+  </div>
+
+  <div class="footer">
+    Counting rule: an Occasion of Service is a SAHR row with Delivery Mode “In person” and Attendance “New” or “Review”. One output row per patient, month, ward and session type.<br>
+    CALHN Creative Therapies · Music Therapy Service
+  </div>
+</div>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="sahr_parser_core.js"></script>
+<script src="sahr_parser_app.js"></script>
+</body>
+</html>
